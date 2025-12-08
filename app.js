@@ -2,7 +2,7 @@
 // CONFIGURACIÓN BASE
 // =====================
 const EQ = {
-  Emultex: 1.01,
+  Emultex: 1.245,      // factor energético relativo
   Famecorte: 1.3514,
   ANFO: 1.0
 };
@@ -14,6 +14,10 @@ const PESO_CARTUCHO = {
 };
 
 const STORAGE_KEY = "xtreme_explosivos_registros";
+
+let registros = cargarRegistros();
+let registroSeleccionadoId = null; // para editar/eliminar
+let edicionId = null;
 
 // =====================
 // UTILIDADES
@@ -46,72 +50,54 @@ function formatearFecha(fechaIso) {
 // =====================
 // CÁLCULO BURDEN/ESPAC.
 // =====================
-//
-// Modelo Xtreme Mining (subterráneo):
-// - Se define un coeficiente base k según diámetro.
-// - B = k * D   (D en metros)
-// - S = 1,15 * B
-// - Si se usa "por tipo de roca", se ajusta k con un factor
-//   según dureza.
-//
 function obtenerCoeficienteBasePorDiametro(diametroMm) {
-  const D = diametroMm / 1000; // en metros
+  const D = diametroMm / 1000;
 
-  // Rangos típicos (ajustables)
   if (D <= 0.051) {
-    // 48–51 mm
-    return 22; // B ≈ 22·D
+    return 22;
   } else if (D <= 0.064) {
-    // 57–64 mm
     return 24;
   } else if (D <= 0.076) {
-    // 76 mm
     return 26;
   } else if (D <= 0.089) {
-    // 89 mm
     return 28;
   } else {
-    // diámetros mayores
     return 30;
   }
 }
 
 function factorRoca(tipoRoca) {
-  // Ajuste del coeficiente base según dureza
   switch (tipoRoca) {
     case "muy-dura":
-      return 1.05; // +5%
+      return 1.05;
     case "dura":
-      return 1.0;  // base
+      return 1.0;
     case "media":
-      return 0.9;  // -10%
+      return 0.9;
     case "blanda":
-      return 0.8;  // -20%
+      return 0.8;
     default:
       return 1.0;
   }
 }
 
 function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) {
-  const D = diametroMm / 1000; // pasar a metros
+  const D = diametroMm / 1000;
   if (!D || D <= 0) return null;
 
   let kBase = obtenerCoeficienteBasePorDiametro(diametroMm);
   let k = kBase;
 
   if (modelo === "simple") {
-    // Usa sólo el diámetro (k base)
     k = kBase;
   } else if (modelo === "roca") {
-    // Aplica ajuste por tipo de roca
     k = kBase * factorRoca(tipoRoca);
   } else {
-    // modelo manual no calcula
     return null;
   }
 
-  const burden = k * D;               // B = k·D
-  const espaciamiento = 1.15 * burden; // S ≈ 1,15·B
+  const burden = k * D;
+  const espaciamiento = 1.15 * burden;
 
   return { burden, espaciamiento };
 }
@@ -119,11 +105,6 @@ function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) 
 // =====================
 // CÁLCULO NÚMERO PERFORACIONES
 // =====================
-//
-// - nCols = ceil(ancho / S)
-// - nFilas = ceil(alto / B)
-// - N° perforaciones = nCols * nFilas
-//
 function calcularNumeroPerforaciones(ancho, alto, burden, espaciamiento) {
   if (!burden || !espaciamiento || burden <= 0 || espaciamiento <= 0) {
     return null;
@@ -140,17 +121,18 @@ function calcularNumeroPerforaciones(ancho, alto, burden, espaciamiento) {
 }
 
 // =====================
-// CÁLCULO PRINCIPAL
+// CÁLCULO PRINCIPAL (MODO XTREME)
 // =====================
+// participaEm/Fa/An = participación relativa, NO fracción
 function calcularDisparo(params) {
   const {
     ancho,
     alto,
     largo,
     densidad,
-    propEm,
-    propFa,
-    propAn
+    participaEm,
+    participaFa,
+    participaAn
   } = params;
 
   const area = ancho * alto;
@@ -158,10 +140,19 @@ function calcularDisparo(params) {
 
   const totalEq = densidad * volumen;
 
+  const sumPart = participaEm + participaFa + participaAn;
+  if (sumPart <= 0) {
+    return null;
+  }
+
+  const fracEm = participaEm / sumPart;
+  const fracFa = participaFa / sumPart;
+  const fracAn = participaAn / sumPart;
+
   const proporciones = {
-    Emultex: propEm,
-    Famecorte: propFa,
-    ANFO: propAn
+    Emultex: fracEm,
+    Famecorte: fracFa,
+    ANFO: fracAn
   };
 
   const detalles = {};
@@ -186,15 +177,17 @@ function calcularDisparo(params) {
     volumen,
     totalEq,
     factor_carga,
-    detalles
+    detalles,
+    fracEm,
+    fracFa,
+    fracAn
   };
 }
 
 // =====================
-// RENDER TABLA
+// TABLA + FILTROS
 // =====================
 const tbody = document.querySelector("#tabla-registros tbody");
-let registros = cargarRegistros();
 
 function aplicarFiltros() {
   const mina = document.getElementById("filtro-mina").value.trim();
@@ -220,6 +213,7 @@ function renderTabla() {
     .reverse()
     .forEach((r) => {
       const tr = document.createElement("tr");
+      tr.dataset.id = r.id;
       tr.innerHTML = `
         <td>${formatearFecha(r.fecha)}</td>
         <td>${r.contrato}</td>
@@ -235,6 +229,10 @@ function renderTabla() {
         <td>${r.detalles.Famecorte.kg_real.toFixed(1)}</td>
         <td>${r.detalles.ANFO.kg_real.toFixed(1)}</td>
       `;
+      tr.addEventListener("click", () => seleccionarRegistro(r.id));
+      if (r.id === registroSeleccionadoId) {
+        tr.classList.add("row-selected");
+      }
       tbody.appendChild(tr);
     });
 
@@ -242,7 +240,7 @@ function renderTabla() {
 }
 
 // =====================
-// GRÁFICOS (Chart.js)
+// GRÁFICOS
 // =====================
 let chartExplosivos = null;
 let chartFc = null;
@@ -323,7 +321,7 @@ function actualizarGraficos(lista) {
 }
 
 // =====================
-// DIBUJO DE MALLA (CANVAS)
+// MALLA (CANVAS)
 // =====================
 function dibujarMalla(reg) {
   const canvas = document.getElementById("canvasMalla");
@@ -340,12 +338,10 @@ function dibujarMalla(reg) {
     return;
   }
 
-  // Dimensiones de dibujo
   const padding = 30;
   const W = canvas.width - padding * 2;
   const H = canvas.height - padding * 2;
 
-  // Ajuste de aspecto sección
   const ratioSeccion = ancho / alto;
   const ratioCanvas = W / H;
 
@@ -362,17 +358,13 @@ function dibujarMalla(reg) {
   const offsetY = (canvas.height - drawH) / 2;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Fondo
   ctx.fillStyle = "#020617";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Marco de la sección
   ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 2;
   ctx.strokeRect(offsetX, offsetY, drawW, drawH);
 
-  // Número de filas y columnas
   let nCols = Math.ceil(ancho / S);
   let nFilas = Math.ceil(alto / B);
   if (nCols < 1) nCols = 1;
@@ -381,7 +373,6 @@ function dibujarMalla(reg) {
   const stepX = drawW / (nCols + 1);
   const stepY = drawH / (nFilas + 1);
 
-  // Taladros
   ctx.fillStyle = "#38bdf8";
   for (let i = 1; i <= nCols; i++) {
     for (let j = 1; j <= nFilas; j++) {
@@ -393,7 +384,6 @@ function dibujarMalla(reg) {
     }
   }
 
-  // Textos de referencia
   ctx.fillStyle = "#9ca3af";
   ctx.font = "11px system-ui";
   ctx.fillText(`Ancho: ${ancho.toFixed(2)} m`, padding, canvas.height - 12);
@@ -402,7 +392,7 @@ function dibujarMalla(reg) {
 }
 
 // =====================
-// EXPORTAR EXCEL / PDF
+// EXPORTAR
 // =====================
 function exportarExcel() {
   if (!registros.length) {
@@ -474,13 +464,75 @@ function exportarExcel() {
 }
 
 function exportarPDF() {
-  // Usa la función de impresión del navegador.
-  // El usuario puede elegir "Guardar como PDF".
+  // Se usa la impresión del navegador (Guardar como PDF)
   window.print();
 }
 
 // =====================
-// MANEJO FORMULARIO
+// SELECCIÓN / EDICIÓN / ELIMINAR
+// =====================
+function seleccionarRegistro(id) {
+  registroSeleccionadoId = id;
+  edicionId = id;
+  document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+  renderTabla();
+
+  const reg = registros.find((r) => r.id === id);
+  if (!reg) return;
+
+  // Cargar datos en formulario
+  document.getElementById("contrato").value = reg.contrato;
+  document.getElementById("mina").value = reg.mina;
+  document.getElementById("ancho").value = reg.ancho;
+  document.getElementById("alto").value = reg.alto;
+  document.getElementById("largo").value = reg.largo;
+  document.getElementById("diametro").value = reg.diametro;
+  document.getElementById("modelo-burden").value = reg.modeloBurden;
+  document.getElementById("tipo-roca").value = reg.tipoRoca;
+  document.getElementById("burden").value = reg.burden.toFixed(2);
+  document.getElementById("espaciamiento").value = reg.espaciamiento.toFixed(2);
+  document.getElementById("nperf").value = reg.nPerf;
+  document.getElementById("densidad").value = reg.densidad.toFixed(2);
+  document.getElementById("prop-emultex").value = reg.participaEm;
+  document.getElementById("prop-famecorte").value = reg.participaFa;
+  document.getElementById("prop-anfo").value = reg.participaAn;
+  document.getElementById("obs").value = reg.obs || "";
+
+  mostrarResultado(reg);
+  dibujarMalla(reg);
+}
+
+function cancelarEdicion() {
+  edicionId = null;
+  registroSeleccionadoId = null;
+  document.getElementById("btn-cancelar-edicion").style.display = "none";
+  tbody
+    .querySelectorAll("tr")
+    .forEach((tr) => tr.classList.remove("row-selected"));
+}
+
+function eliminarSeleccionado() {
+  if (!registroSeleccionadoId) {
+    alert("Primero selecciona un registro en la tabla.");
+    return;
+  }
+  if (!confirm("¿Seguro que deseas eliminar el registro seleccionado?")) {
+    return;
+  }
+  registros = registros.filter((r) => r.id !== registroSeleccionadoId);
+  guardarRegistros(registros);
+  cancelarEdicion();
+  renderTabla();
+  document.getElementById("resultado").innerHTML = "";
+  const canvas = document.getElementById("canvasMalla");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+// =====================
+// FORMULARIO
 // =====================
 document.getElementById("form-disparo").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -502,18 +554,17 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
   let nPerf = nPerfInput ? parseInt(nPerfInput, 10) : 0;
 
   const densidad = parseFloat(document.getElementById("densidad").value);
-  const propEm = parseFloat(document.getElementById("prop-emultex").value);
-  const propFa = parseFloat(document.getElementById("prop-famecorte").value);
-  const propAn = parseFloat(document.getElementById("prop-anfo").value);
+  const participaEm = parseFloat(document.getElementById("prop-emultex").value) || 0;
+  const participaFa = parseFloat(document.getElementById("prop-famecorte").value) || 0;
+  const participaAn = parseFloat(document.getElementById("prop-anfo").value) || 0;
   const obs = document.getElementById("obs").value.trim();
 
-  const sumaProps = propEm + propFa + propAn;
-  if (Math.abs(sumaProps - 1) > 0.01) {
-    alert("Las proporciones de explosivo deben sumar aproximadamente 1,0");
+  if (participaEm + participaFa + participaAn <= 0) {
+    alert("Debes ingresar participación para al menos un tipo de explosivo.");
     return;
   }
 
-  // 1) Calcular B y S según modelo
+  // 1) Calcular B y S
   if (modeloBurden === "manual") {
     if (!burden || !espaciamiento || burden <= 0 || espaciamiento <= 0) {
       alert("En modo MANUAL debes ingresar Burden y Espaciamiento válidos.");
@@ -536,7 +587,7 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     document.getElementById("espaciamiento").value = espaciamiento.toFixed(2);
   }
 
-  // 2) Calcular N° de perforaciones si viene en 0
+  // 2) N° perforaciones
   if (!nPerf || nPerf <= 0) {
     const nCalc = calcularNumeroPerforaciones(ancho, alto, burden, espaciamiento);
     if (!nCalc) {
@@ -547,21 +598,30 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     document.getElementById("nperf").value = nPerf;
   }
 
-  // 3) Cálculo de explosivos
+  // 3) Cálculo de explosivos (modo XTREME)
   const calc = calcularDisparo({
     ancho,
     alto,
     largo,
     densidad,
-    propEm,
-    propFa,
-    propAn
+    participaEm,
+    participaFa,
+    participaAn
   });
 
-  const fecha = new Date().toISOString();
+  if (!calc) {
+    alert("No se pudo calcular la distribución de explosivos.");
+    return;
+  }
+
+  const fecha = edicionId
+    ? registros.find((r) => r.id === edicionId)?.fecha || new Date().toISOString()
+    : new Date().toISOString();
+
+  const id = edicionId || fecha + "_" + Math.random().toString(36).slice(2);
 
   const registro = {
-    id: fecha + "_" + Math.random().toString(36).slice(2),
+    id,
     fecha,
     contrato,
     mina,
@@ -579,37 +639,36 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     volumen: calc.volumen,
     factor_carga: calc.factor_carga,
     totalEq: calc.totalEq,
-    detalles: calc.detalles
+    detalles: calc.detalles,
+    participaEm,
+    participaFa,
+    participaAn
   };
 
-  registros.push(registro);
+  if (edicionId) {
+    registros = registros.map((r) => (r.id === edicionId ? registro : r));
+  } else {
+    registros.push(registro);
+  }
+
   guardarRegistros(registros);
   renderTabla();
   mostrarResultado(registro);
   dibujarMalla(registro);
 
-  // Mantener algunos valores tras reset
-  e.target.reset();
-  document.getElementById("densidad").value = densidad.toFixed(2);
-  document.getElementById("prop-emultex").value = propEm;
-  document.getElementById("prop-famecorte").value = propFa;
-  document.getElementById("prop-anfo").value = propAn;
-  document.getElementById("diametro").value = diametro;
-  document.getElementById("modelo-burden").value = modeloBurden;
-  document.getElementById("tipo-roca").value = tipoRoca;
-  document.getElementById("burden").value = burden.toFixed(2);
-  document.getElementById("espaciamiento").value = espaciamiento.toFixed(2);
-  document.getElementById("nperf").value = nPerf;
+  // Mantener valores
+  edicionId = registro.id;
+  registroSeleccionadoId = registro.id;
+  document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
 });
 
 function mostrarResultado(reg) {
   const resDiv = document.getElementById("resultado");
   const d = reg.detalles;
-
   const longitudTotal = reg.nPerf * reg.largo;
 
   resDiv.innerHTML = `
-    <strong>Último disparo registrado</strong><br/>
+    <strong>Último disparo registrado ${edicionId === reg.id ? "(MODO EDICIÓN)" : ""}</strong><br/>
     Mina: <strong>${reg.mina}</strong> · Contrato: <strong>${reg.contrato}</strong><br/>
     Diámetro: <strong>${reg.diametro} mm</strong> · Modelo: <strong>${reg.modeloBurden}</strong> · Roca: <strong>${reg.tipoRoca}</strong><br/>
     N° perforaciones: <strong>${reg.nPerf}</strong> 
@@ -648,13 +707,21 @@ document
   .getElementById("btn-export-pdf")
   .addEventListener("click", exportarPDF);
 
+document
+  .getElementById("btn-eliminar")
+  .addEventListener("click", eliminarSeleccionado);
+
+document
+  .getElementById("btn-cancelar-edicion")
+  .addEventListener("click", cancelarEdicion);
+
 // =====================
 // INICIO
 // =====================
 document.getElementById("year").textContent = new Date().getFullYear();
 renderTabla();
-
-// Si hay al menos un registro, dibujar malla del último al cargar
 if (registros.length > 0) {
-  dibujarMalla(registros[registros.length - 1]);
+  const ultimo = registros[registros.length - 1];
+  mostrarResultado(ultimo);
+  dibujarMalla(ultimo);
 }
