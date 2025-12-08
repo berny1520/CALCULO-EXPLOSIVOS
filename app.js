@@ -46,53 +46,99 @@ function formatearFecha(fechaIso) {
 // =====================
 // CÁLCULO BURDEN/ESPAC.
 // =====================
-function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) {
-  const d = diametroMm / 1000; // pasar a metros
-  if (!d || d <= 0) return null;
+//
+// Modelo Xtreme Mining (subterráneo):
+// - Se define un coeficiente base k según diámetro.
+// - B = k * D   (D en metros)
+// - S = 1,15 * B
+// - Si se usa "por tipo de roca", se ajusta k con un factor
+//   según dureza.
+//
+function obtenerCoeficienteBasePorDiametro(diametroMm) {
+  const D = diametroMm / 1000; // en metros
 
-  let k;
+  // Rangos típicos (puedes ajustarlos a tu estándar interno)
+  if (D <= 0.051) {
+    // 48–51 mm
+    return 22; // B ≈ 22·D
+  } else if (D <= 0.064) {
+    // 57–64 mm
+    return 24;
+  } else if (D <= 0.076) {
+    // 76 mm
+    return 26;
+  } else if (D <= 0.089) {
+    // 89 mm
+    return 28;
+  } else {
+    // diámetros mayores
+    return 30;
+  }
+}
+
+function factorRoca(tipoRoca) {
+  // Ajuste del coeficiente base según dureza
+  switch (tipoRoca) {
+    case "muy-dura":
+      return 1.05; // +5%
+    case "dura":
+      return 1.0;  // base
+    case "media":
+      return 0.9;  // -10%
+    case "blanda":
+      return 0.8;  // -20%
+    default:
+      return 1.0;
+  }
+}
+
+function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) {
+  const D = diametroMm / 1000; // pasar a metros
+  if (!D || D <= 0) return null;
+
+  let kBase = obtenerCoeficienteBasePorDiametro(diametroMm);
+  let k = kBase;
 
   if (modelo === "simple") {
-    // Modelo recomendado: coeficiente típico para roca dura subterránea
-    k = 25; // B ≈ 25·d
+    // Usa sólo el diámetro (k base)
+    k = kBase;
   } else if (modelo === "roca") {
-    // Coeficientes según tipo de roca
-    switch (tipoRoca) {
-      case "muy-dura":
-        k = 27;
-        break;
-      case "dura":
-        k = 24;
-        break;
-      case "media":
-        k = 20;
-        break;
-      case "blanda":
-        k = 17;
-        break;
-      default:
-        k = 22;
-    }
+    // Aplica ajuste por tipo de roca
+    k = kBase * factorRoca(tipoRoca);
   } else {
     // modelo manual no calcula
     return null;
   }
 
-  const burden = k * d; // B = k·d
-  const espaciamiento = 1.2 * burden; // S ≈ 1,2·B
+  const burden = k * D;          // B = k·D
+  const espaciamiento = 1.15 * burden; // S ≈ 1,15·B
 
   return { burden, espaciamiento };
 }
 
 // =====================
-// CÁLCULO NUMERO PERFORACIONES
+// CÁLCULO NÚMERO PERFORACIONES
 // =====================
+//
+// Se calcula el número de filas y columnas de malla para
+// cubrir completamente ancho x alto:
+//
+// - nCols = ceil(ancho / S)
+// - nFilas = ceil(alto / B)
+// - N° perforaciones = nCols * nFilas
+//
 function calcularNumeroPerforaciones(ancho, alto, burden, espaciamiento) {
   if (!burden || !espaciamiento || burden <= 0 || espaciamiento <= 0) {
     return null;
   }
-  const nCols = Math.round(ancho / espaciamiento);
-  const nFilas = Math.round(alto / burden);
+
+  let nCols = Math.ceil(ancho / espaciamiento);
+  let nFilas = Math.ceil(alto / burden);
+
+  // Asegurarse de tener al menos 1 en cada dimensión
+  if (nCols < 1) nCols = 1;
+  if (nFilas < 1) nFilas = 1;
+
   const nPerf = nCols * nFilas;
   return nPerf > 0 ? nPerf : null;
 }
@@ -105,7 +151,6 @@ function calcularDisparo(params) {
     ancho,
     alto,
     largo,
-    nPerf,
     densidad,
     propEm,
     propFa,
@@ -114,6 +159,8 @@ function calcularDisparo(params) {
 
   const area = ancho * alto;
   const volumen = area * largo;
+
+  // densidad = factor de carga objetivo (kg eq/m³)
   const totalEq = densidad * volumen;
 
   const proporciones = {
@@ -137,7 +184,7 @@ function calcularDisparo(params) {
     };
   });
 
-  const factor_carga = totalEq / volumen;
+  const factor_carga = totalEq / volumen; // debería ≈ densidad
 
   return {
     area,
@@ -354,7 +401,6 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     ancho,
     alto,
     largo,
-    nPerf,
     densidad,
     propEm,
     propFa,
@@ -402,9 +448,7 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
   document.getElementById("burden").value = burden.toFixed(2);
   document.getElementById("espaciamiento").value = espaciamiento.toFixed(2);
   document.getElementById("nperf").value = nPerf;
-}
-
-);
+});
 
 function mostrarResultado(reg) {
   const resDiv = document.getElementById("resultado");
