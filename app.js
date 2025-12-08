@@ -57,7 +57,7 @@ function formatearFecha(fechaIso) {
 function obtenerCoeficienteBasePorDiametro(diametroMm) {
   const D = diametroMm / 1000; // en metros
 
-  // Rangos típicos (puedes ajustarlos a tu estándar interno)
+  // Rangos típicos (ajustables)
   if (D <= 0.051) {
     // 48–51 mm
     return 22; // B ≈ 22·D
@@ -110,7 +110,7 @@ function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) 
     return null;
   }
 
-  const burden = k * D;          // B = k·D
+  const burden = k * D;               // B = k·D
   const espaciamiento = 1.15 * burden; // S ≈ 1,15·B
 
   return { burden, espaciamiento };
@@ -119,9 +119,6 @@ function calcularBurdenEspaciamientoDesdeDiametro(diametroMm, modelo, tipoRoca) 
 // =====================
 // CÁLCULO NÚMERO PERFORACIONES
 // =====================
-//
-// Se calcula el número de filas y columnas de malla para
-// cubrir completamente ancho x alto:
 //
 // - nCols = ceil(ancho / S)
 // - nFilas = ceil(alto / B)
@@ -135,7 +132,6 @@ function calcularNumeroPerforaciones(ancho, alto, burden, espaciamiento) {
   let nCols = Math.ceil(ancho / espaciamiento);
   let nFilas = Math.ceil(alto / burden);
 
-  // Asegurarse de tener al menos 1 en cada dimensión
   if (nCols < 1) nCols = 1;
   if (nFilas < 1) nFilas = 1;
 
@@ -160,7 +156,6 @@ function calcularDisparo(params) {
   const area = ancho * alto;
   const volumen = area * largo;
 
-  // densidad = factor de carga objetivo (kg eq/m³)
   const totalEq = densidad * volumen;
 
   const proporciones = {
@@ -184,7 +179,7 @@ function calcularDisparo(params) {
     };
   });
 
-  const factor_carga = totalEq / volumen; // debería ≈ densidad
+  const factor_carga = totalEq / volumen;
 
   return {
     area,
@@ -328,6 +323,163 @@ function actualizarGraficos(lista) {
 }
 
 // =====================
+// DIBUJO DE MALLA (CANVAS)
+// =====================
+function dibujarMalla(reg) {
+  const canvas = document.getElementById("canvasMalla");
+  if (!canvas || !canvas.getContext) return;
+
+  const ctx = canvas.getContext("2d");
+  const ancho = reg.ancho;
+  const alto = reg.alto;
+  const B = reg.burden;
+  const S = reg.espaciamiento;
+
+  if (!ancho || !alto || !B || !S) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  // Dimensiones de dibujo
+  const padding = 30;
+  const W = canvas.width - padding * 2;
+  const H = canvas.height - padding * 2;
+
+  // Ajuste de aspecto sección
+  const ratioSeccion = ancho / alto;
+  const ratioCanvas = W / H;
+
+  let drawW, drawH;
+  if (ratioSeccion > ratioCanvas) {
+    drawW = W;
+    drawH = W / ratioSeccion;
+  } else {
+    drawH = H;
+    drawW = H * ratioSeccion;
+  }
+
+  const offsetX = (canvas.width - drawW) / 2;
+  const offsetY = (canvas.height - drawH) / 2;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Fondo
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Marco de la sección
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(offsetX, offsetY, drawW, drawH);
+
+  // Número de filas y columnas
+  let nCols = Math.ceil(ancho / S);
+  let nFilas = Math.ceil(alto / B);
+  if (nCols < 1) nCols = 1;
+  if (nFilas < 1) nFilas = 1;
+
+  const stepX = drawW / (nCols + 1);
+  const stepY = drawH / (nFilas + 1);
+
+  // Taladros
+  ctx.fillStyle = "#38bdf8";
+  for (let i = 1; i <= nCols; i++) {
+    for (let j = 1; j <= nFilas; j++) {
+      const x = offsetX + i * stepX;
+      const y = offsetY + j * stepY;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Textos de referencia
+  ctx.fillStyle = "#9ca3af";
+  ctx.font = "11px system-ui";
+  ctx.fillText(`Ancho: ${ancho.toFixed(2)} m`, padding, canvas.height - 12);
+  ctx.fillText(`Alto: ${alto.toFixed(2)} m`, canvas.width - 120, padding - 10);
+  ctx.fillText(`B=${B.toFixed(2)} m · S=${S.toFixed(2)} m`, padding, padding - 10);
+}
+
+// =====================
+// EXPORTAR EXCEL / PDF
+// =====================
+function exportarExcel() {
+  if (!registros.length) {
+    alert("No hay registros para exportar.");
+    return;
+  }
+
+  const encabezados = [
+    "Fecha",
+    "Contrato",
+    "Mina",
+    "Ancho (m)",
+    "Alto (m)",
+    "Largo (m)",
+    "Diametro (mm)",
+    "ModeloBurden",
+    "TipoRoca",
+    "B (m)",
+    "S (m)",
+    "NPerforaciones",
+    "Volumen (m3)",
+    "FactorCarga (kg_eq_m3)",
+    "Emultex_kg",
+    "Famecorte_kg",
+    "ANFO_kg",
+    "TotalEq_kg",
+    "Observaciones"
+  ];
+
+  const líneas = [encabezados.join(";")];
+
+  registros.forEach((r) => {
+    const fila = [
+      formatearFecha(r.fecha),
+      r.contrato,
+      r.mina,
+      r.ancho.toFixed(2),
+      r.alto.toFixed(2),
+      r.largo.toFixed(2),
+      r.diametro,
+      r.modeloBurden,
+      r.tipoRoca,
+      r.burden.toFixed(2),
+      r.espaciamiento.toFixed(2),
+      r.nPerf,
+      r.volumen.toFixed(2),
+      r.factor_carga.toFixed(2),
+      r.detalles.Emultex.kg_real.toFixed(1),
+      r.detalles.Famecorte.kg_real.toFixed(1),
+      r.detalles.ANFO.kg_real.toFixed(1),
+      r.totalEq.toFixed(1),
+      (r.obs || "").replace(/\r?\n/g, " ")
+    ];
+    líneas.push(fila.join(";"));
+  });
+
+  const contenido = líneas.join("\n");
+  const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  const fechaHoy = new Date().toISOString().slice(0, 10);
+  a.download = `Disparos_Xtreme_${fechaHoy}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportarPDF() {
+  // Usa la función de impresión del navegador.
+  // El usuario puede elegir "Guardar como PDF".
+  window.print();
+}
+
+// =====================
 // MANEJO FORMULARIO
 // =====================
 document.getElementById("form-disparo").addEventListener("submit", (e) => {
@@ -380,7 +532,6 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     burden = bs.burden;
     espaciamiento = bs.espaciamiento;
 
-    // Mostrar en los campos para que el operador vea los valores usados
     document.getElementById("burden").value = burden.toFixed(2);
     document.getElementById("espaciamiento").value = espaciamiento.toFixed(2);
   }
@@ -435,6 +586,7 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
   guardarRegistros(registros);
   renderTabla();
   mostrarResultado(registro);
+  dibujarMalla(registro);
 
   // Mantener algunos valores tras reset
   e.target.reset();
@@ -453,12 +605,16 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
 function mostrarResultado(reg) {
   const resDiv = document.getElementById("resultado");
   const d = reg.detalles;
+
+  const longitudTotal = reg.nPerf * reg.largo;
+
   resDiv.innerHTML = `
     <strong>Último disparo registrado</strong><br/>
     Mina: <strong>${reg.mina}</strong> · Contrato: <strong>${reg.contrato}</strong><br/>
     Diámetro: <strong>${reg.diametro} mm</strong> · Modelo: <strong>${reg.modeloBurden}</strong> · Roca: <strong>${reg.tipoRoca}</strong><br/>
     N° perforaciones: <strong>${reg.nPerf}</strong> 
     (B=${reg.burden.toFixed(2)} m, S=${reg.espaciamiento.toFixed(2)} m)<br/>
+    Largo taladro: <strong>${reg.largo.toFixed(2)} m</strong> · Longitud total perforada: <strong>${longitudTotal.toFixed(1)} m</strong><br/>
     Volumen: <strong>${reg.volumen.toFixed(2)} m³</strong><br/>
     Factor de carga: <strong>${reg.factor_carga.toFixed(2)} kg eq/m³</strong><br/>
     Total equivalente: <strong>${reg.totalEq.toFixed(1)} kg eq</strong><br/>
@@ -469,7 +625,7 @@ function mostrarResultado(reg) {
 }
 
 // =====================
-// FILTROS
+// FILTROS + BOTONES
 // =====================
 document.getElementById("filtro-mina").addEventListener("change", renderTabla);
 document
@@ -484,8 +640,21 @@ document
     renderTabla();
   });
 
+document
+  .getElementById("btn-export-excel")
+  .addEventListener("click", exportarExcel);
+
+document
+  .getElementById("btn-export-pdf")
+  .addEventListener("click", exportarPDF);
+
 // =====================
 // INICIO
 // =====================
 document.getElementById("year").textContent = new Date().getFullYear();
 renderTabla();
+
+// Si hay al menos un registro, dibujar malla del último al cargar
+if (registros.length > 0) {
+  dibujarMalla(registros[registros.length - 1]);
+}

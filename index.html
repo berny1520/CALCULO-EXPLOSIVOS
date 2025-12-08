@@ -139,6 +139,11 @@
       </form>
 
       <div id="resultado" class="resultado"></div>
+
+      <div class="malla-wrapper">
+        <h3>Malla de perforación (vista sección)</h3>
+        <canvas id="canvasMalla" width="420" height="260"></canvas>
+      </div>
     </section>
 
     <!-- PANEL DERECHO: FILTROS, TABLA, GRÁFICOS -->
@@ -161,6 +166,8 @@
           <input id="filtro-contrato" type="text" placeholder="Ej: 5010" />
         </div>
         <button id="btn-limpiar-filtros" class="btn-secondary" type="button">Limpiar filtros</button>
+        <button id="btn-export-excel" class="btn-secondary" type="button">Exportar Excel</button>
+        <button id="btn-export-pdf" class="btn-secondary" type="button">Exportar PDF</button>
       </div>
 
       <div class="table-wrapper">

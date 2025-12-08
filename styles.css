@@ -154,6 +154,22 @@ h3 {
   border: 1px dashed #374151;
 }
 
+.malla-wrapper {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  background: #111827;
+}
+
+.malla-wrapper canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
