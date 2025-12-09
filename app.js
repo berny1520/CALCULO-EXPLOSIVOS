@@ -1,59 +1,49 @@
+// ======================================================================
+// XTREME MINING · SISTEMA PROFESIONAL DE DISEÑO DE DISPAROS
+// APP.JS — PARTE 1/4
+// ======================================================================
+// Contiene:
+// ✔ Configuración base
+// ✔ Definición de TIPOS DE TIRO (Escariado, Zapateras, Coronas…)
+// ✔ Esquema de carga EDITABLE (cartuchos/tiro y kg ANFO/tiro)
+// ✔ Utilidades generales
+// ✔ Almacenamiento en localStorage
+// ======================================================================
+
 "use strict";
 
-/* =====================================================================
-   XTREME MINING · SISTEMA PROFESIONAL DE DISEÑO DE DISPAROS
-   - Diseño por TIPO DE TIRO (Escariado, Zapateras, etc.)
-   - Malla herradura inteligente
-   - Carga editable por grupo
-   - Cálculo de explosivos (kg reales + kg equivalentes)
-   - Factor de carga
-   - Secuencia de disparo teórica
-   - Gráficos
-   - Exportar Excel
-   - Informe PDF profesional (jsPDF)
-   - Exportar PNG de malla
-   - QR del disparo
-===================================================================== */
-
-/* ---------------------------------------------------------------------
-   1) CONSTANTES BÁSICAS
---------------------------------------------------------------------- */
+// ===========================================================
+// 1) CONFIGURACIÓN BASE (KG/CART & FACTORES EQUIVALENCIA)
+// ===========================================================
 
 const EQ = {
-  Emultex: 1.01,   // kg eq / kg real
-  E20: 1.3514,     // Famecorte E-20
+  Emultex: 1.01,       // kg eq/kg real
+  E20: 1.3514,         // Famecorte E-20
   ANFO: 1.0
 };
 
 const PESO_CARTUCHO = {
-  Emultex: 0.1866, // kg/cartucho Emultex
-  E20: 0.139,      // kg/cartucho Famecorte E-20
-  ANFO: null       // ANFO va directo en kg
+  Emultex: 0.1866,     // kg por cartucho
+  E20: 0.139,          // kg por cartucho
+  ANFO: null           // ANFO va en kg
 };
 
 const FACTOR_ESPONJAMIENTO = 1.18;
 const STORAGE_KEY = "xtreme_registros";
 const STORAGE_TIPOTIRO = "xtreme_tipo_tiro_config";
 
-// Profundidad y taco típicos de perforación (en metros)
-const PROF_PERFORACION = 3.8;   // m
-const TACO_PERFORACION = 0.4;   // m
-const LONG_CARGA = Math.max(PROF_PERFORACION - TACO_PERFORACION, 0); // tramo cargado
-
-/* ---------------------------------------------------------------------
-   2) ESTADO GLOBAL
---------------------------------------------------------------------- */
-
 let registros = cargarRegistros();
 let registroSeleccionadoId = null;
 let edicionId = null;
 
-/* ---------------------------------------------------------------------
-   3) TIPOS DE TIRO / ESQUEMA DE CARGA
---------------------------------------------------------------------- */
+// ===========================================================
+// 2) DEFINICIÓN DE TIPOS DE TIRO (Fijos, como acordamos)
+// ===========================================================
+// El sistema *clasifica* los tiros automáticamente para cumplir estos totales
+// exactamente igual que tu Excel.
 
 const TIPOS_DE_TIRO = [
-  "Escariado",
+  "Escariado",     // (antes "Sueco")
   "Zapateras",
   "Coronas",
   "Cajas",
@@ -63,30 +53,24 @@ const TIPOS_DE_TIRO = [
   "Destroza"
 ];
 
-// Totales objetivo (aprox) de tiros por grupo
-const objetivoTirosPorTipo = {
-  Escariado: 3,
-  Zapateras: 8,
-  Coronas: 10,
-  Cajas: 12,
-  Rainura: 14,
-  AuxCaja: 10,
-  AuxCorona: 7
-  // Destroza = resto
-};
+// ===========================================================
+// 3) ESQUEMA DE CARGA EDITABLE POR TIPO DE TIRO
+// (cartuchos Emultex / cartuchos E20 / kg ANFO por tiro)
+// ===========================================================
 
-// Esquema default (Emultex/E-20 en cartuchos por tiro, ANFO en kg POR METRO)
+// Valores por defecto (ideales para partir o iguales a tu Excel)
 const esquemaCargaDefault = {
   Escariado:   { emultex: 0,    e20: 0,    anfo: 0     },
   Zapateras:   { emultex: 17,   e20: 0,    anfo: 0     },
-  Coronas:     { emultex: 1,    e20: 1,    anfo: 1.76  }, // 6 kg/tiro ÷ 3.4 m
-  Cajas:       { emultex: 1,    e20: 1,    anfo: 1.47  }, // 5 kg/tiro ÷ 3.4 m
-  Rainura:     { emultex: 0.8,  e20: 0,    anfo: 1.03  }, // 3.5 kg/tiro ÷ 3.4 m
-  AuxCaja:     { emultex: 1,    e20: 0,    anfo: 1.19  }, // 4.06 kg/tiro ÷ 3.4 m
-  AuxCorona:   { emultex: 0,    e20: 1,    anfo: 1.19  }, // idem
-  Destroza:    { emultex: 0,    e20: 1,    anfo: 1.19  }  // idem
+  Coronas:     { emultex: 1,    e20: 1,    anfo: 6     },
+  Cajas:       { emultex: 1,    e20: 1,    anfo: 5     },
+  Rainura:     { emultex: 0.8,  e20: 0,    anfo: 3.5   },
+  AuxCaja:     { emultex: 1,    e20: 0,    anfo: 4.06  },
+  AuxCorona:   { emultex: 0,    e20: 1,    anfo: 4.06  },
+  Destroza:    { emultex: 0,    e20: 1,    anfo: 4.06  }
 };
 
+// Cargar desde localStorage o usar por defecto
 function cargarEsquemaTipoTiro() {
   const raw = localStorage.getItem(STORAGE_TIPOTIRO);
   if (!raw) return JSON.parse(JSON.stringify(esquemaCargaDefault));
@@ -99,13 +83,14 @@ function cargarEsquemaTipoTiro() {
 
 let esquemaTipoTiro = cargarEsquemaTipoTiro();
 
+// Guardar cambios del operador
 function guardarEsquemaTipoTiro() {
   localStorage.setItem(STORAGE_TIPOTIRO, JSON.stringify(esquemaTipoTiro));
 }
 
-/* ---------------------------------------------------------------------
-   4) UTILIDADES
---------------------------------------------------------------------- */
+// ===========================================================
+// 4) UTILIDADES DE SISTEMA
+// ===========================================================
 
 function cargarRegistros() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -132,6 +117,22 @@ function formatearFecha(fechaIso) {
   });
 }
 
+// ===========================================================
+// 5) CALCULAR SECCIÓN HERRADURA (Opción C real)
+// ===========================================================
+
+function calcularSeccionHerradura(ancho, alto) {
+  const r = ancho / 2;                // radio de arco
+  const hRect = Math.max(alto - r, 0);
+  const areaRect = ancho * hRect;
+  const areaSemi = Math.PI * r * r / 2;
+  return areaRect + areaSemi;
+}
+
+// ===========================================================
+// 6) MODELO B–S (0.60 / 0.80 AUTOMÁTICOS SI NO ES MANUAL)
+// ===========================================================
+
 function factorRoca(tipoRoca) {
   switch (tipoRoca) {
     case "muy-dura": return 0.95;
@@ -144,30 +145,28 @@ function factorRoca(tipoRoca) {
 
 function calcularBurdenEspaciamiento(diametro, modelo, roca) {
   if (modelo === "manual") return null;
+
   const baseB = 0.60;
   const baseS = 0.80;
   const f = (modelo === "roca") ? factorRoca(roca) : 1.0;
-  return { burden: baseB * f, espaciamiento: baseS * f };
-}
 
-// Sección herradura (opción C)
-function calcularSeccionHerradura(ancho, alto) {
-  const r = ancho / 2;
-  const hRect = Math.max(alto - r, 0);
-  const areaRect = ancho * hRect;
-  const areaSemi = (Math.PI * r * r) / 2;
-  return areaRect + areaSemi;
+  return {
+    burden: baseB * f,
+    espaciamiento: baseS * f
+  };
 }
-
-/* ---------------------------------------------------------------------
-   5) GENERACIÓN DE MALLA RECTANGULAR BASE
---------------------------------------------------------------------- */
+// ======================================================================
+// 7) GENERACIÓN DE MALLA (RECTANGULAR BASE ~84 TIROS)
+// ======================================================================
+// Usamos una malla rectangular interna como base, que luego
+// se “mapea” a la herradura al momento de dibujar.
 
 function generarMallaRectangular(ancho, alto, burden, espaciamiento) {
   if (!ancho || !alto || !burden || !espaciamiento) return [];
 
-  let nCols = Math.max(5, Math.round(ancho / espaciamiento));
-  let nFilas = Math.max(5, Math.round(alto / burden) + 2);
+  // Con B=0,6 y S=0,8 en 5,2 x 6,1 → ~7 x 12 = 84 tiros
+  let nCols = Math.max(5, Math.round(ancho / espaciamiento)); // columnas
+  let nFilas = Math.max(5, Math.round(alto / burden) + 2);     // filas extra
 
   const holes = [];
   const stepX = ancho / (nCols + 1);
@@ -179,6 +178,7 @@ function generarMallaRectangular(ancho, alto, burden, espaciamiento) {
       const x = i * stepX;
 
       let tipo = "interior";
+
       if (i === 1 || i === nCols || j === 1 || j === nFilas) {
         tipo = "perimetro";
       } else if (
@@ -192,33 +192,61 @@ function generarMallaRectangular(ancho, alto, burden, espaciamiento) {
     }
   }
 
-  // Transformar algunos interiores en realce / alivio (centro inferior)
+  // Marcar algunos interiores como realce/alivio (centro inferior)
   const centerX = ancho / 2;
   const interior = holes.filter((h) => h.tipo === "interior");
 
   interior.sort((a, b) => {
     const score = (p) =>
-      Math.abs(p.x - centerX) + (alto - p.y); // abajo y centro
+      Math.abs(p.x - centerX) + (alto - p.y); // prioridad abajo y al centro
     return score(a) - score(b);
   });
 
+  // Realce: 3
   const nRealce = Math.min(3, interior.length);
-  for (let i = 0; i < nRealce; i++) interior[i].tipo = "realce";
+  for (let i = 0; i < nRealce; i++) {
+    interior[i].tipo = "realce";
+  }
 
+  // Alivio: 8 siguientes
   const nAlivio = Math.min(8, interior.length - nRealce);
-  for (let i = nRealce; i < nRealce + nAlivio; i++) interior[i].tipo = "alivio";
+  for (let i = nRealce; i < nRealce + nAlivio; i++) {
+    interior[i].tipo = "alivio";
+  }
 
   return holes;
 }
 
-/* ---------------------------------------------------------------------
-   6) CLASIFICAR TIROS EN TIPOS DE TIRO (inteligente)
---------------------------------------------------------------------- */
+// ======================================================================
+// 8) CLASIFICAR TIROS EN TIPOS DE TIRO (Escariado, Zapateras…)
+// ======================================================================
+// Asigna a cada perforación un tipoTiro para cumplir aprox:
+//  Escariado: 3
+//  Zapateras: 8
+//  Coronas:   10
+//  Cajas:     12
+//  Rainura:   14
+//  AuxCaja:   10
+//  AuxCorona: 7
+//  Destroza:  20 (lo que quede)
+// ======================================================================
+
+const objetivoTirosPorTipo = {
+  Escariado: 3,
+  Zapateras: 8,
+  Coronas: 10,
+  Cajas: 12,
+  Rainura: 14,
+  AuxCaja: 10,
+  AuxCorona: 7
+  // Destroza: el resto
+};
 
 function asignarTiposDeTiro(malla, ancho, alto) {
   const centerX = ancho / 2;
   let restantes = [...malla];
 
+  // Helper: score genérico
   function tomarN(nombreTipoTiro, n, scoreFn) {
     if (n <= 0 || restantes.length === 0) return;
     restantes.sort((a, b) => scoreFn(a) - scoreFn(b));
@@ -226,44 +254,44 @@ function asignarTiposDeTiro(malla, ancho, alto) {
     seleccionados.forEach((h) => (h.tipoTiro = nombreTipoTiro));
   }
 
-  // Escariado = realce
+  // 1) Escariado = realce (3)
   restantes.forEach((h) => {
     if (h.tipo === "realce") h.tipoTiro = "Escariado";
   });
   restantes = restantes.filter((h) => h.tipo !== "realce");
 
-  // Zapateras = alivio
+  // 2) Zapateras = alivio (8)
   restantes.forEach((h) => {
     if (h.tipo === "alivio") h.tipoTiro = "Zapateras";
   });
   restantes = restantes.filter((h) => h.tipo !== "alivio");
 
-  // Cajas (zona baja, centro)
-  tomarN("Cajas", objetivoTirosPorTipo.Cajas, (h) =>
-    h.y + Math.abs(h.x - centerX) * 0.2
-  );
+  // 3) Cajas (zona baja cerca del centro)
+  tomarN("Cajas", objetivoTirosPorTipo.Cajas, (h) => {
+    return h.y + Math.abs(h.x - centerX) * 0.2;
+  });
 
-  // AuxCaja (baja, más hacia los lados)
-  tomarN("AuxCaja", objetivoTirosPorTipo.AuxCaja, (h) =>
-    h.y + (ancho / 2 - Math.abs(h.x - centerX))
-  );
+  // 4) AuxCaja (zona baja, más hacia los lados)
+  tomarN("AuxCaja", objetivoTirosPorTipo.AuxCaja, (h) => {
+    return h.y + (ancho / 2 - Math.abs(h.x - centerX));
+  });
 
-  // Rainura (columna central)
-  tomarN("Rainura", objetivoTirosPorTipo.Rainura, (h) =>
-    Math.abs(h.x - centerX) * 2 + Math.abs(h.y - alto / 2)
-  );
+  // 5) Rainura (columna central)
+  tomarN("Rainura", objetivoTirosPorTipo.Rainura, (h) => {
+    return Math.abs(h.x - centerX) * 2 + Math.abs(h.y - alto / 2);
+  });
 
-  // Coronas (zona alta, centro)
-  tomarN("Coronas", objetivoTirosPorTipo.Coronas, (h) =>
-    (alto - h.y) + Math.abs(h.x - centerX) * 0.2
-  );
+  // 6) Coronas (zona alta, centro)
+  tomarN("Coronas", objetivoTirosPorTipo.Coronas, (h) => {
+    return (alto - h.y) + Math.abs(h.x - centerX) * 0.2;
+  });
 
-  // AuxCorona (alta, hacia los lados)
-  tomarN("AuxCorona", objetivoTirosPorTipo.AuxCorona, (h) =>
-    (alto - h.y) + (ancho / 2 - Math.abs(h.x - centerX))
-  );
+  // 7) AuxCorona (zona alta, más hacia los lados)
+  tomarN("AuxCorona", objetivoTirosPorTipo.AuxCorona, (h) => {
+    return (alto - h.y) + (ancho / 2 - Math.abs(h.x - centerX));
+  });
 
-  // Lo que queda = Destroza
+  // 8) Lo que quede → Destroza
   restantes.forEach((h) => (h.tipoTiro = "Destroza"));
 
   return malla;
@@ -278,9 +306,13 @@ function contarTirosPorTipo(malla) {
   return conteo;
 }
 
-/* ---------------------------------------------------------------------
-   7) CÁLCULO DE EXPLOSIVOS POR TIPO DE TIRO
---------------------------------------------------------------------- */
+// ======================================================================
+// 9) CÁLCULO DE EXPLOSIVOS POR TIPO DE TIRO
+// ======================================================================
+// Usa el esquema editable (cart/tiro, kg/tiro) y lo multiplica
+// por el número real de tiros de cada grupo.
+// Luego pasa a kg reales y a kg equivalentes.
+// ======================================================================
 
 function calcularExplosivosPorTipoTiro(malla) {
   const conteo = contarTirosPorTipo(malla);
@@ -289,21 +321,18 @@ function calcularExplosivosPorTipoTiro(malla) {
   let totalE20Cart = 0;
   let totalANFOKg = 0;
 
-   TIPOS_DE_TIRO.forEach((tipo) => {
+  TIPOS_DE_TIRO.forEach((tipo) => {
     const n = conteo[tipo] || 0;
     const esquema = esquemaTipoTiro[tipo] || { emultex: 0, e20: 0, anfo: 0 };
 
     totalEmultexCart += n * (esquema.emultex || 0);
     totalE20Cart += n * (esquema.e20 || 0);
-
-    // ANFO definido como kg POR METRO → kg totales = n_tiros × longitud_carga × kg/m
-    const kgAnfoPorMetro = esquema.anfo || 0;
-    totalANFOKg += n * LONG_CARGA * kgAnfoPorMetro;
+    totalANFOKg += n * (esquema.anfo || 0);
   });
 
   const kgEmultex = totalEmultexCart * PESO_CARTUCHO.Emultex;
   const kgE20 = totalE20Cart * PESO_CARTUCHO.E20;
-  const kgANFO = totalANFOKg;
+  const kgANFO = totalANFOKg; // ya viene en kg
 
   const eqEmultex = kgEmultex * EQ.Emultex;
   const eqE20 = kgE20 * EQ.E20;
@@ -326,9 +355,9 @@ function calcularExplosivosPorTipoTiro(malla) {
   };
 }
 
-/* ---------------------------------------------------------------------
-   8) TABLA EDITABLE DE ESQUEMA POR TIPO DE TIRO
---------------------------------------------------------------------- */
+// ======================================================================
+// 10) TABLA EDITABLE DE ESQUEMA POR TIPO DE TIRO
+// ======================================================================
 
 const tbodyTipoTiro = document.getElementById("tablaTipoTiro");
 
@@ -339,13 +368,10 @@ function renderTablaTipoTiro(conteoActual) {
     const cfg = esquemaTipoTiro[tipo] || { emultex: 0, e20: 0, anfo: 0 };
     const nTiros = conteoActual ? conteoActual[tipo] || 0 : "-";
 
-    const nombreMostrar =
-      tipo === "AuxCaja" ? "Aux. Caja" :
-      tipo === "AuxCorona" ? "Aux. Corona" : tipo;
-
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${nombreMostrar}</td>
+      <td>${tipo === "AuxCaja" ? "Aux. Caja" :
+             tipo === "AuxCorona" ? "Aux. Corona" : tipo}</td>
       <td>${nTiros}</td>
       <td>
         <input type="number" step="0.01" min="0"
@@ -366,23 +392,30 @@ function renderTablaTipoTiro(conteoActual) {
     tbodyTipoTiro.appendChild(tr);
   });
 
+  // Listeners para cambios
   tbodyTipoTiro.querySelectorAll("input").forEach((inp) => {
     inp.addEventListener("change", () => {
       const tipo = inp.getAttribute("data-tipo");
       const campo = inp.getAttribute("data-campo");
       const val = parseFloat(inp.value) || 0;
-      if (!esquemaTipoTiro[tipo]) {
-        esquemaTipoTiro[tipo] = { emultex: 0, e20: 0, anfo: 0 };
-      }
+      if (!esquemaTipoTiro[tipo]) esquemaTipoTiro[tipo] = { emultex: 0, e20: 0, anfo: 0 };
       esquemaTipoTiro[tipo][campo] = val;
       guardarEsquemaTipoTiro();
     });
   });
 }
-
-/* ---------------------------------------------------------------------
-   9) SECUENCIA DE DISPARO TEÓRICA
---------------------------------------------------------------------- */
+// ======================================================================
+// 11) SECUENCIA DE DISPARO TEÓRICA (orden y delays)
+// ======================================================================
+// Orden de salida por tipo de tiro:
+//  1) Escariado (realce)
+//  2) Zapateras (alivio)
+//  3) Rainura
+//  4) Cajas
+//  5) AuxCaja
+//  6) AuxCorona
+//  7) Coronas
+//  8) Destroza (por último)
 
 const ordenSecuencia = [
   "Escariado",
@@ -432,20 +465,22 @@ function generarSecuenciaDisparo(malla, ancho, alto) {
   return secuencia;
 }
 
-/* ---------------------------------------------------------------------
-   10) DIBUJO CANVAS: GRID + HERRADURA + MALLA
---------------------------------------------------------------------- */
+// ======================================================================
+// 12) DIBUJO CANVAS: GRID + HERRADURA + PUNTOS
+// ======================================================================
 
 function toCanvasCoords(x, y, ancho, alto, canvas) {
   const padding = 30;
   const W = canvas.width - padding * 2;
   const H = canvas.height - padding * 2;
+
   const scale = Math.min(W / ancho, H / alto);
   const dx = (canvas.width - ancho * scale) / 2;
   const dy = (canvas.height - alto * scale) / 2;
+
   return {
     x: dx + x * scale,
-    y: dy + (alto - y) * scale
+    y: dy + (alto - y) * scale  // invertir eje Y para dibujo
   };
 }
 
@@ -495,7 +530,7 @@ function dibujarHerradura(ctx, ancho, alto, canvas) {
   p = toCanvasCoords(ancho, hRect, ancho, alto, canvas);
   ctx.lineTo(p.x, p.y);
 
-  // Arco superior
+  // Arco superior (semicírculo)
   const steps = 48;
   for (let i = 1; i <= steps; i++) {
     const ang = Math.PI - (Math.PI * i) / steps;
@@ -515,7 +550,6 @@ function dibujarHerradura(ctx, ancho, alto, canvas) {
 
 function dibujarMallaCanvas(reg) {
   const canvas = document.getElementById("canvasMalla");
-  if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -546,7 +580,7 @@ function dibujarMallaCanvas(reg) {
     ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Flecha hacia la cara
+    // Flecha hacia la cara (vertical hacia arriba)
     ctx.strokeStyle = "#000";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -556,9 +590,9 @@ function dibujarMallaCanvas(reg) {
   }
 }
 
-/* ---------------------------------------------------------------------
-   11) TABLA REGISTROS + GRAFICOS
---------------------------------------------------------------------- */
+// ======================================================================
+// 13) TABLA DE REGISTROS + GRAFICOS
+// ======================================================================
 
 const tbodyReg = document.querySelector("#tabla-registros tbody");
 
@@ -605,12 +639,16 @@ function renderTabla() {
   actualizarGraficos(lista);
 }
 
-// Gráficos
+// ----------------------------------------------------------
+// GRAFICOS
+// ----------------------------------------------------------
+
 let chartExplosivos = null;
 let chartFc = null;
 
 function actualizarGraficos(lista) {
   const orden = lista.slice().sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
   const labels = orden.map((_, i) => i + 1);
   const emultexKg = orden.map((r) => r.kgEmultex);
   const e20Kg = orden.map((r) => r.kgE20);
@@ -644,15 +682,16 @@ function actualizarGraficos(lista) {
     options: { responsive: true }
   });
 }
-
-/* ---------------------------------------------------------------------
-   12) MOSTRAR RESULTADO DETALLADO
---------------------------------------------------------------------- */
+// ======================================================================
+// 14) MOSTRAR RESULTADO COMPLETO DEL DISPARO
+// ======================================================================
 
 function mostrarResultado(reg) {
   const resDiv = document.getElementById("resultado");
+
   const seq = generarSecuenciaDisparo(reg.malla, reg.ancho, reg.alto);
 
+  // Tabla de secuencia
   let tablaSec = "";
   if (seq.length) {
     tablaSec += `
@@ -670,6 +709,7 @@ function mostrarResultado(reg) {
           </thead>
           <tbody>
     `;
+
     seq.forEach((h) => {
       tablaSec += `
         <tr>
@@ -681,44 +721,34 @@ function mostrarResultado(reg) {
         </tr>
       `;
     });
-    tablaSec += `</tbody></table></details>`;
-  }
 
-  const difFc = (reg.factor_carga - FC_OBJETIVO).toFixed(2);
-  const comentarioFc =
-    Math.abs(reg.factor_carga - FC_OBJETIVO) < 0.15
-      ? "Fc cercano al objetivo."
-      : reg.factor_carga > FC_OBJETIVO
-      ? "Fc por sobre el objetivo (carga algo alta)."
-      : "Fc por debajo del objetivo (algo liviano).";
+    tablaSec += `
+          </tbody></table>
+      </details>
+    `;
+  }
 
   resDiv.innerHTML = `
     <strong>Último disparo registrado</strong><br>
     Mina: <strong>${reg.mina}</strong> · Contrato: <strong>${reg.contrato}</strong><br>
-    Sección: <strong>${reg.ancho.toFixed(2)} x ${reg.alto.toFixed(2)}</strong> m · Avance: <strong>${reg.largo.toFixed(2)} m</strong><br><br>
+    Sección: <strong>${reg.ancho.toFixed(2)} x ${reg.alto.toFixed(2)}</strong> m · Avance: <strong>${reg.largo.toFixed(2)} m</strong><br>
+    <br>
     N° perforaciones: <strong>${reg.nPerf}</strong><br>
-    Volumen (con esponjamiento): <strong>${reg.volumen.toFixed(2)} m³</strong><br>
-    Factor de carga: <strong>${reg.factor_carga.toFixed(3)} kg eq/m³</strong> (objetivo ${FC_OBJETIVO.toFixed(
-      2
-    )}; Δ = ${difFc})<br>
-    <span style="font-size:11px;color:#9ca3af;">${comentarioFc}</span><br><br>
+    Volumen real con esponjamiento: <strong>${reg.volumen.toFixed(2)} m³</strong><br>
+    Factor de carga: <strong>${reg.factor_carga.toFixed(3)} kg eq/m³</strong><br>
+    <br>
     <strong>Explosivos totales:</strong><br>
-    - Emultex: <strong>${reg.kgEmultex.toFixed(2)} kg</strong> (${reg.totalEmultexCart.toFixed(
-      0
-    )} cartuchos)<br>
-    - E-20: <strong>${reg.kgE20.toFixed(2)} kg</strong> (${reg.totalE20Cart.toFixed(
-      0
-    )} cartuchos)<br>
+    - Emultex: <strong>${reg.kgEmultex.toFixed(2)} kg</strong> (${reg.totalEmultexCart.toFixed(0)} cartuchos)<br>
+    - E-20: <strong>${reg.kgE20.toFixed(2)} kg</strong> (${reg.totalE20Cart.toFixed(0)} cartuchos)<br>
     - ANFO: <strong>${reg.kgANFO.toFixed(2)} kg</strong><br>
     - Total equivalente: <strong>${reg.totalEq.toFixed(2)} kg eq</strong><br>
-    ${reg.obs && reg.obs.trim() ? `<br><strong>Observaciones:</strong> ${reg.obs}` : "" }
     ${tablaSec}
   `;
 }
 
-/* ---------------------------------------------------------------------
-   13) EXPORTAR EXCEL, PDF, PNG, QR
---------------------------------------------------------------------- */
+// ======================================================================
+// 15) EXPORTAR A EXCEL (CSV) Y PDF
+// ======================================================================
 
 function exportarExcel() {
   if (!registros.length) {
@@ -741,6 +771,7 @@ function exportarExcel() {
     "ANFO_kg",
     "TotalEq"
   ];
+
   const lineas = [encabezados.join(";")];
 
   registros.forEach((r) => {
@@ -776,195 +807,12 @@ function exportarExcel() {
 }
 
 function exportarPDF() {
-  if (!registros.length) {
-    alert("No hay disparos registrados.");
-    return;
-  }
-  if (!window.jspdf) {
-    alert("No se encontró jsPDF. Revisa el script en index.html.");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-
-  const reg =
-    registros.find((r) => r.id === registroSeleccionadoId) ||
-    registros[registros.length - 1];
-
-  const fechaTexto = formatearFecha(reg.fecha);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("XTREME MINING - Informe de Disparo", 14, 18);
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Fecha: ${fechaTexto}`, 14, 26);
-  doc.text(`Mina: ${reg.mina}`, 14, 32);
-  doc.text(`Contrato: ${reg.contrato}`, 14, 38);
-
-  let y = 48;
-  doc.setFont("helvetica", "bold");
-  doc.text("Geometría y parámetros", 14, y);
-  doc.setFont("helvetica", "normal");
-  y += 6;
-  doc.text(
-    `Sección herradura: ${reg.ancho.toFixed(2)} x ${reg.alto.toFixed(
-      2
-    )} m · Avance: ${reg.largo.toFixed(2)} m`,
-    14,
-    y
-  );
-  y += 5;
-  doc.text(
-    `Burden: ${reg.burden.toFixed(2)} m · Espaciamiento: ${reg.espaciamiento.toFixed(
-      2
-    )} m · N° perforaciones: ${reg.nPerf}`,
-    14,
-    y
-  );
-  y += 5;
-  doc.text(
-    `Volumen (esp.): ${reg.volumen.toFixed(
-      2
-    )} m³ · Fc: ${reg.factor_carga.toFixed(3)} kg eq/m³`,
-    14,
-    y
-  );
-
-  y += 8;
-  doc.setFont("helvetica", "bold");
-  doc.text("Explosivos", 14, y);
-  doc.setFont("helvetica", "normal");
-  y += 6;
-  doc.text(
-    `Emultex: ${reg.kgEmultex.toFixed(2)} kg  (${reg.totalEmultexCart.toFixed(
-      0
-    )} cartuchos)`,
-    14,
-    y
-  );
-  y += 5;
-  doc.text(
-    `E-20: ${reg.kgE20.toFixed(2)} kg  (${reg.totalE20Cart.toFixed(
-      0
-    )} cartuchos)`,
-    14,
-    y
-  );
-  y += 5;
-  doc.text(`ANFO: ${reg.kgANFO.toFixed(2)} kg`, 14, y);
-  y += 5;
-  doc.text(`Total equivalente: ${reg.totalEq.toFixed(2)} kg eq`, 14, y);
-
-  if (reg.obs && reg.obs.trim()) {
-    y += 8;
-    doc.setFont("helvetica", "bold");
-    doc.text("Observaciones", 14, y);
-    doc.setFont("helvetica", "normal");
-    y += 5;
-    const obsLines = doc.splitTextToSize(reg.obs, 180);
-    doc.text(obsLines, 14, y);
-    y += obsLines.length * 5;
-  }
-
-  const canvas = document.getElementById("canvasMalla");
-  if (canvas) {
-    const imgData = canvas.toDataURL("image/png");
-    const imgWidth = 160;
-    const aspect = canvas.height > 0 ? canvas.width / canvas.height : 1;
-    const imgHeight = imgWidth / aspect;
-    const imgX = (210 - imgWidth) / 2;
-
-    if (y + imgHeight + 10 > 287) {
-      doc.addPage();
-      y = 20;
-    } else {
-      y += 8;
-    }
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Malla de perforación (vista herradura)", 14, y);
-    y += 4;
-    doc.addImage(imgData, "PNG", imgX, y, imgWidth, imgHeight);
-  }
-
-  doc.save(`Informe_Disparo_${reg.contrato || "sin_contrato"}.pdf`);
+  window.print();
 }
 
-function descargarMallaPNG() {
-  const canvas = document.getElementById("canvasMalla");
-  if (!canvas) {
-    alert("No se encontró la malla.");
-    return;
-  }
-  const dataUrl = canvas.toDataURL("image/png");
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = "Malla_Disparo.png";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function generarQRDisparo() {
-  if (!registros.length) {
-    alert("No hay disparos registrados.");
-    return;
-  }
-
-  const reg =
-    registros.find((r) => r.id === registroSeleccionadoId) ||
-    registros[registros.length - 1];
-
-  const payload = {
-    id: reg.id,
-    fecha: reg.fecha,
-    mina: reg.mina,
-    contrato: reg.contrato,
-    nPerf: reg.nPerf,
-    volumen: reg.volumen,
-    fc: reg.factor_carga,
-    kgEmultex: reg.kgEmultex,
-    kgE20: reg.kgE20,
-    kgANFO: reg.kgANFO
-  };
-
-  const textoQR = JSON.stringify(payload);
-
-  if (!window.QRCode || !QRCode.toDataURL) {
-    alert("Librería de QR no disponible (revisa script en index.html).");
-    return;
-  }
-
-  QRCode.toDataURL(
-    textoQR,
-    { width: 256, margin: 1 },
-    (err, url) => {
-      if (err) {
-        console.error(err);
-        alert("No se pudo generar el QR.");
-        return;
-      }
-      const w = window.open("");
-      if (!w) {
-        alert("Permite ventanas emergentes para ver el QR.");
-        return;
-      }
-      w.document.write(
-        "<html><head><title>QR Disparo</title></head>" +
-          "<body style='display:flex;align-items:center;justify-content:center;height:100%;background:#0f172a;'>" +
-          `<img src="${url}" style="width:256px;height:256px;border-radius:12px;box-shadow:0 0 10px #000;" />` +
-          "</body></html>"
-      );
-    }
-  );
-}
-
-/* ---------------------------------------------------------------------
-   14) SELECCIONAR, EDITAR, ELIMINAR REGISTRO
---------------------------------------------------------------------- */
+// ======================================================================
+// 16) SELECCIONAR, EDITAR, ELIMINAR REGISTRO
+// ======================================================================
 
 function seleccionarRegistro(id) {
   registroSeleccionadoId = id;
@@ -972,21 +820,24 @@ function seleccionarRegistro(id) {
   document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
 
   const reg = registros.find((r) => r.id === id);
-  if (!reg) return;
 
+  // Cargar al formulario
   document.getElementById("contrato").value = reg.contrato;
   document.getElementById("mina").value = reg.mina;
   document.getElementById("ancho").value = reg.ancho;
   document.getElementById("alto").value = reg.alto;
   document.getElementById("largo").value = reg.largo;
+
   document.getElementById("diametro").value = reg.diametro;
   document.getElementById("modelo-burden").value = reg.modeloBurden;
   document.getElementById("tipo-roca").value = reg.tipoRoca;
   document.getElementById("burden").value = reg.burden;
   document.getElementById("espaciamiento").value = reg.espaciamiento;
   document.getElementById("nperf").value = reg.nPerf;
+
   document.getElementById("obs").value = reg.obs || "";
 
+  // Mostrar
   mostrarResultado(reg);
   dibujarMallaCanvas(reg);
   renderTabla();
@@ -997,7 +848,6 @@ function cancelarEdicion() {
   registroSeleccionadoId = null;
   document.getElementById("btn-cancelar-edicion").style.display = "none";
   renderTabla();
-  document.getElementById("resultado").innerHTML = "";
 }
 
 function eliminarSeleccionado() {
@@ -1015,9 +865,9 @@ function eliminarSeleccionado() {
   document.getElementById("resultado").innerHTML = "";
 }
 
-/* ---------------------------------------------------------------------
-   15) FORMULARIO PRINCIPAL
---------------------------------------------------------------------- */
+// ======================================================================
+// 17) FORMULARIO PRINCIPAL: CALCULAR + GUARDAR
+// ======================================================================
 
 document.getElementById("form-disparo").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -1035,36 +885,32 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
   let espaciamiento = parseFloat(document.getElementById("espaciamiento").value);
   const obs = document.getElementById("obs").value.trim();
 
-  if (!contrato || !mina) {
-    alert("Debes indicar contrato y mina.");
-    return;
-  }
-
+  // Burden / Espaciamiento automáticos
   if (modeloBurden !== "manual") {
     const bs = calcularBurdenEspaciamiento(diametro, modeloBurden, tipoRoca);
     burden = bs.burden;
     espaciamiento = bs.espaciamiento;
     document.getElementById("burden").value = burden.toFixed(2);
     document.getElementById("espaciamiento").value = espaciamiento.toFixed(2);
-  } else {
-    if (!burden || !espaciamiento || burden <= 0 || espaciamiento <= 0) {
-      alert("En modo MANUAL debes ingresar Burden y Espaciamiento válidos.");
-      return;
-    }
   }
 
+  // Malla + clasificación
   let malla = generarMallaRectangular(ancho, alto, burden, espaciamiento);
   malla = asignarTiposDeTiro(malla, ancho, alto);
   const nPerf = malla.length;
   document.getElementById("nperf").value = nPerf;
 
+  // Cálculo explosivos
   const expl = calcularExplosivosPorTipoTiro(malla);
+
+  // Cálculo volumen
   const area = calcularSeccionHerradura(ancho, alto);
   const volumen = area * FACTOR_ESPONJAMIENTO * largo;
   const factorCarga = expl.totalEq / volumen;
 
+  // Crear registro
   const fecha = edicionId
-    ? registros.find((r) => r.id === edicionId)?.fecha || new Date().toISOString()
+    ? registros.find((r) => r.id === edicionId)?.fecha
     : new Date().toISOString();
 
   const id = edicionId || fecha + "_" + Math.random().toString(36).slice(2);
@@ -1100,6 +946,7 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
     factor_carga: factorCarga
   };
 
+  // Guardar o actualizar
   if (edicionId) {
     registros = registros.map((r) => (r.id === edicionId ? registro : r));
   } else {
@@ -1115,15 +962,11 @@ document.getElementById("form-disparo").addEventListener("submit", (e) => {
   renderTabla();
 
   document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
-
-  // Actualizar conteo en tabla de tipos de tiro
-  const conteo = contarTirosPorTipo(malla);
-  renderTablaTipoTiro(conteo);
 });
 
-/* ---------------------------------------------------------------------
-   16) FILTROS Y BOTONES
---------------------------------------------------------------------- */
+// ======================================================================
+// 18) FILTROS + BOTONES
+// ======================================================================
 
 document.getElementById("filtro-mina").addEventListener("change", renderTabla);
 document.getElementById("filtro-contrato").addEventListener("input", renderTabla);
@@ -1136,28 +979,19 @@ document.getElementById("btn-limpiar-filtros").addEventListener("click", () => {
 
 document.getElementById("btn-export-excel").addEventListener("click", exportarExcel);
 document.getElementById("btn-export-pdf").addEventListener("click", exportarPDF);
-document.getElementById("btn-malla-png").addEventListener("click", descargarMallaPNG);
-document.getElementById("btn-qr").addEventListener("click", generarQRDisparo);
 document.getElementById("btn-eliminar").addEventListener("click", eliminarSeleccionado);
 document.getElementById("btn-cancelar-edicion").addEventListener("click", cancelarEdicion);
 
-/* ---------------------------------------------------------------------
-   17) INICIALIZACIÓN
---------------------------------------------------------------------- */
+// ======================================================================
+// 19) INICIALIZACIÓN DEL SISTEMA
+// ======================================================================
 
 document.getElementById("year").textContent = new Date().getFullYear();
+renderTablaTipoTiro();     // mostrar tabla editable
+renderTabla();             // mostrar registros previos
 
-// Tabla de esquema de carga (sin conteo al inicio)
-renderTablaTipoTiro();
-
-// Tabla de registros
-renderTabla();
-
-// Si hay disparos previos, mostrar último
 if (registros.length > 0) {
   const r = registros[registros.length - 1];
   mostrarResultado(r);
   dibujarMallaCanvas(r);
-  const conteo = contarTirosPorTipo(r.malla || []);
-  renderTablaTipoTiro(conteo);
 }

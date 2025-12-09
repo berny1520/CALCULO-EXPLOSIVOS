@@ -5,8 +5,6 @@
   <title>Xtreme Mining – Diseño de Disparo por Tipo de Tiro</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -26,10 +24,15 @@
 
 <main class="container">
 
+  <!-- ========================================= -->
+  <!-- PANEL IZQUIERDO – FORMULARIO PRINCIPAL   -->
+  <!-- ========================================= -->
   <section class="card">
     <h2>Parámetros del Disparo</h2>
 
     <form id="form-disparo">
+
+      <!-- MINA Y CONTRATO -->
       <div class="form-row">
         <label for="contrato">Contrato</label>
         <input id="contrato" type="text" placeholder="Ej: 5010" required />
@@ -46,6 +49,7 @@
         </select>
       </div>
 
+      <!-- GEOMETRÍA -->
       <h3>Geometría de la Excavación</h3>
 
       <div class="form-row-group">
@@ -63,6 +67,7 @@
         </div>
       </div>
 
+      <!-- BURDEN / ESPACIAMIENTO -->
       <h3>Burden y Espaciamiento</h3>
 
       <div class="form-row-group">
@@ -108,6 +113,7 @@
         </div>
       </div>
 
+      <!-- OBSERVACIONES -->
       <div class="form-row">
         <label for="obs">Observaciones</label>
         <textarea id="obs" rows="2"></textarea>
@@ -122,14 +128,20 @@
 
     </form>
 
+    <!-- RESULTADO -->
     <div id="resultado" class="resultado"></div>
 
+    <!-- CANVAS MALLA -->
     <div class="malla-wrapper">
       <h3>Malla de Perforación (Vista Herradura)</h3>
       <canvas id="canvasMalla" width="420" height="260"></canvas>
     </div>
   </section>
 
+
+  <!-- ========================================= -->
+  <!-- PANEL DERECHO – TIPOS DE TIRO + REGISTRO -->
+  <!-- ========================================= -->
   <section class="card">
     <h2>Explosivo por TIPO DE TIRO (Editable)</h2>
 
@@ -138,6 +150,7 @@
       El sistema multiplicará × el número de tiros reales de cada tipo.
     </p>
 
+    <!-- TABLA EDITABLE DE CARGA POR TIPO DE TIRO -->
     <table class="tabla-tiro">
       <thead>
         <tr>
@@ -145,12 +158,15 @@
           <th>N° tiros</th>
           <th>Emultex<br>(cart/tiro)</th>
           <th>Famecorte E-20<br>(cart/tiro)</th>
-          <th>ANFO<br>(kg/m)</th>
+          <th>ANFO<br>(kg/tiro)</th>
         </tr>
       </thead>
-      <tbody id="tablaTipoTiro"></tbody>
+      <tbody id="tablaTipoTiro">
+        <!-- Rellenado desde JS -->
+      </tbody>
     </table>
 
+    <!-- REGISTRO HISTÓRICO -->
     <h2 style="margin-top:20px;">Registro Histórico</h2>
 
     <div class="filters">
@@ -172,9 +188,7 @@
 
       <button id="btn-limpiar-filtros" class="btn-secondary">Limpiar</button>
       <button id="btn-export-excel" class="btn-secondary">Exportar Excel</button>
-      <button id="btn-export-pdf" class="btn-secondary">Informe PDF</button>
-      <button id="btn-malla-png" class="btn-secondary">PNG Malla</button>
-      <button id="btn-qr" class="btn-secondary">QR Disparo</button>
+      <button id="btn-export-pdf" class="btn-secondary">PDF</button>
       <button id="btn-eliminar" class="btn-secondary">Eliminar</button>
     </div>
 
@@ -199,6 +213,7 @@
       </table>
     </div>
 
+    <!-- GRAFICOS -->
     <div class="charts">
       <div class="chart-card">
         <h3>Carga por tipo de explosivo</h3>
