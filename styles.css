@@ -1,3 +1,8 @@
+/* ---------------------------------------------------------
+   XTREME MINING - STYLES.CSS
+   Interfaz oscura estilo profesional
+--------------------------------------------------------- */
+
 * {
   box-sizing: border-box;
 }
@@ -8,6 +13,8 @@ body {
   background: #111827;
   color: #e5e7eb;
 }
+
+/* ---------------- HEADER ---------------- */
 
 .header {
   display: flex;
@@ -52,12 +59,16 @@ body {
   color: #9ca3af;
 }
 
+/* ---------------- CONTAINER ---------------- */
+
 .container {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
   gap: 16px;
   padding: 16px;
 }
+
+/* ---------------- CARDS ---------------- */
 
 .card {
   background: #020617;
@@ -78,6 +89,8 @@ h3 {
   font-size: 14px;
   color: #9ca3af;
 }
+
+/* ---------------- FORM ---------------- */
 
 .form-row {
   display: flex;
@@ -115,6 +128,8 @@ h3 {
   gap: 10px;
 }
 
+/* ---------------- BUTTONS ---------------- */
+
 .btn-primary,
 .btn-secondary {
   border-radius: 999px;
@@ -145,6 +160,8 @@ h3 {
   background: #020617;
 }
 
+/* ---------------- RESULTADOS ---------------- */
+
 .resultado {
   margin-top: 12px;
   font-size: 13px;
@@ -153,6 +170,8 @@ h3 {
   background: #111827;
   border: 1px dashed #374151;
 }
+
+/* ---------------- MALLA CANVAS ---------------- */
 
 .malla-wrapper {
   margin-top: 12px;
@@ -169,6 +188,8 @@ h3 {
   border-radius: 6px;
   border: 1px solid #1f2937;
 }
+
+/* ---------------- TABLE ---------------- */
 
 .filters {
   display: flex;
@@ -219,10 +240,13 @@ tbody tr:hover {
   background: #1f2937;
 }
 
+/* Fila seleccionada */
 .row-selected {
   background: #0f172a !important;
   box-shadow: inset 0 0 0 1px #38bdf8;
 }
+
+/* ---------------- CHARTS ---------------- */
 
 .charts {
   display: grid;
@@ -242,6 +266,8 @@ tbody tr:hover {
   margin-bottom: 6px;
 }
 
+/* ---------------- FOOTER ---------------- */
+
 .footer {
   margin-top: 8px;
   padding: 10px 16px;
@@ -251,7 +277,8 @@ tbody tr:hover {
   border-top: 1px solid #1f2937;
 }
 
-/* Responsive */
+/* ---------------- RESPONSIVE ---------------- */
+
 @media (max-width: 900px) {
   .container {
     grid-template-columns: 1fr;

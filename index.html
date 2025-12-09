@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <title>Xtreme Mining - Cálculo de Explosivos</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- Chart.js desde CDN para los gráficos -->
+  <!-- Chart.js para los gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header class="header">
     <div class="logo">
+      <!-- Si tienes el archivo, descomenta y pon el nombre correcto -->
       <!-- <img src="logo_xtreme.png" alt="Xtreme Mining" /> -->
       <div class="logo-text">
         <span class="logo-main">XTREME MINING</span>
@@ -30,7 +31,13 @@
       <form id="form-disparo">
         <div class="form-row">
           <label for="contrato">Contrato</label>
-          <input id="contrato" name="contrato" type="text" placeholder="Ej: Contrato 5010" required />
+          <input
+            id="contrato"
+            name="contrato"
+            type="text"
+            placeholder="Ej: Contrato 5010"
+            required
+          />
         </div>
 
         <div class="form-row">
@@ -48,15 +55,36 @@
         <div class="form-row-group">
           <div class="form-row">
             <label for="ancho">Ancho excavación (m)</label>
-            <input id="ancho" type="number" step="0.01" min="0" value="5.20" required />
+            <input
+              id="ancho"
+              type="number"
+              step="0.01"
+              min="0"
+              value="5.20"
+              required
+            />
           </div>
           <div class="form-row">
             <label for="alto">Alto excavación (m)</label>
-            <input id="alto" type="number" step="0.01" min="0" value="6.10" required />
+            <input
+              id="alto"
+              type="number"
+              step="0.01"
+              min="0"
+              value="6.10"
+              required
+            />
           </div>
           <div class="form-row">
-            <label for="largo">Largo perforación (m)</label>
-            <input id="largo" type="number" step="0.01" min="0" value="3.80" required />
+            <label for="largo">Avance / Largo perforación (m)</label>
+            <input
+              id="largo"
+              type="number"
+              step="0.01"
+              min="0"
+              value="3.80"
+              required
+            />
           </div>
         </div>
 
@@ -65,12 +93,19 @@
         <div class="form-row-group">
           <div class="form-row">
             <label for="diametro">Diámetro perforación (mm)</label>
-            <input id="diametro" type="number" step="1" min="25" value="51" required />
+            <input
+              id="diametro"
+              type="number"
+              step="1"
+              min="25"
+              value="51"
+              required
+            />
           </div>
           <div class="form-row">
             <label for="modelo-burden">Modelo</label>
             <select id="modelo-burden">
-              <option value="simple">Recomendado (simple por diámetro)</option>
+              <option value="simple">Recomendado (B=0,60 / S=0,80)</option>
               <option value="roca">Por tipo de roca</option>
               <option value="manual">Manual (usar B y S ingresados)</option>
             </select>
@@ -89,17 +124,29 @@
         <div class="form-row-group">
           <div class="form-row">
             <label for="burden">Burden B (m)</label>
-            <input id="burden" type="number" step="0.01" min="0" value="0" />
+            <input
+              id="burden"
+              type="number"
+              step="0.01"
+              min="0"
+              value="0"
+            />
           </div>
           <div class="form-row">
             <label for="espaciamiento">Espaciamiento S (m)</label>
-            <input id="espaciamiento" type="number" step="0.01" min="0" value="0" />
+            <input
+              id="espaciamiento"
+              type="number"
+              step="0.01"
+              min="0"
+              value="0"
+            />
           </div>
           <div class="form-row">
             <label for="nperf">
               N° perforaciones<br />
               <span style="font-size:11px; color:#6b7280;">
-                (0 = calcular con B y S)
+                (se calcula automático con B y S)
               </span>
             </label>
             <input id="nperf" type="number" min="0" value="0" />
@@ -109,38 +156,86 @@
         <div class="form-row-group">
           <div class="form-row">
             <label for="densidad">Factor de carga objetivo (kg eq/m³)</label>
-            <input id="densidad" type="number" step="0.01" min="0" value="2.37" required />
+            <input
+              id="densidad"
+              type="number"
+              step="0.01"
+              min="0"
+              value="2.37"
+              required
+            />
           </div>
         </div>
 
         <h3>Participación relativa de explosivos (MODO XTREME)</h3>
-        <p style="font-size:11px; color:#9ca3af; margin-top:-4px; margin-bottom:6px;">
-          Pueden ser porcentajes o valores relativos (no es necesario que sumen 1 ni 100).<br/>
-          El sistema los normaliza automáticamente.
+        <p
+          style="
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: -4px;
+            margin-bottom: 6px;
+          "
+        >
+          Ingresar participación relativa; pueden ser porcentajes o índices (no
+          necesitan sumar 1 ni 100).<br />
+          El sistema los normaliza automáticamente antes de calcular el
+          equivalente.
         </p>
         <div class="form-row-group">
           <div class="form-row">
             <label for="prop-emultex">Emultex (participación)</label>
-            <input id="prop-emultex" type="number" step="0.01" min="0" value="30" required />
+            <input
+              id="prop-emultex"
+              type="number"
+              step="0.01"
+              min="0"
+              value="30"
+              required
+            />
           </div>
           <div class="form-row">
-            <label for="prop-famecorte">Famecorte (participación)</label>
-            <input id="prop-famecorte" type="number" step="0.01" min="0" value="10" required />
+            <label for="prop-famecorte">Famecorte E-20 (participación)</label>
+            <input
+              id="prop-famecorte"
+              type="number"
+              step="0.01"
+              min="0"
+              value="10"
+              required
+            />
           </div>
           <div class="form-row">
-            <label for="prop-anfo">ANFO (participación)</label>
-            <input id="prop-anfo" type="number" step="0.01" min="0" value="60" required />
+            <label for="prop-anfo">ANFO Premium (participación)</label>
+            <input
+              id="prop-anfo"
+              type="number"
+              step="0.01"
+              min="0"
+              value="60"
+              required
+            />
           </div>
         </div>
 
         <div class="form-row">
           <label for="obs">Observaciones</label>
-          <textarea id="obs" rows="2" placeholder="Observaciones del frente, tipo de roca, sección D2, etc."></textarea>
+          <textarea
+            id="obs"
+            rows="2"
+            placeholder="Observaciones del frente, tipo de roca, sección D2, etc."
+          ></textarea>
         </div>
 
         <div class="form-row-group">
-          <button type="submit" class="btn-primary">Calcular y Registrar</button>
-          <button type="button" id="btn-cancelar-edicion" class="btn-secondary" style="display:none;">
+          <button type="submit" class="btn-primary">
+            Calcular y Registrar
+          </button>
+          <button
+            type="button"
+            id="btn-cancelar-edicion"
+            class="btn-secondary"
+            style="display: none"
+          >
             Cancelar edición
           </button>
         </div>
@@ -154,7 +249,7 @@
       </div>
     </section>
 
-    <!-- PANEL DERECHO: FILTROS, TABLA, GRÁFICOS -->
+    <!-- PANEL DERECHO: REGISTRO, TABLA, GRÁFICOS -->
     <section class="card">
       <h2>Registro histórico de disparos</h2>
 
@@ -173,10 +268,26 @@
           <label for="filtro-contrato">Filtrar por contrato</label>
           <input id="filtro-contrato" type="text" placeholder="Ej: 5010" />
         </div>
-        <button id="btn-limpiar-filtros" class="btn-secondary" type="button">Limpiar filtros</button>
-        <button id="btn-export-excel" class="btn-secondary" type="button">Exportar Excel</button>
-        <button id="btn-export-pdf" class="btn-secondary" type="button">Exportar PDF</button>
-        <button id="btn-eliminar" class="btn-secondary" type="button">Eliminar seleccionado</button>
+        <button
+          id="btn-limpiar-filtros"
+          class="btn-secondary"
+          type="button"
+        >
+          Limpiar filtros
+        </button>
+        <button
+          id="btn-export-excel"
+          class="btn-secondary"
+          type="button"
+        >
+          Exportar Excel
+        </button>
+        <button id="btn-export-pdf" class="btn-secondary" type="button">
+          Exportar PDF
+        </button>
+        <button id="btn-eliminar" class="btn-secondary" type="button">
+          Eliminar seleccionado
+        </button>
       </div>
 
       <div class="table-wrapper">
@@ -187,7 +298,7 @@
               <th>Contrato</th>
               <th>Mina</th>
               <th>Sección (m)</th>
-              <th>Largo (m)</th>
+              <th>Avance (m)</th>
               <th>B (m)</th>
               <th>S (m)</th>
               <th>N° Perf.</th>
