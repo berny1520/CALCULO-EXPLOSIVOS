@@ -35,8 +35,10 @@ const FACTOR_ESPONJAMIENTO = 1.18;
 const STORAGE_KEY = "xtreme_registros";
 const STORAGE_TIPOTIRO = "xtreme_tipo_tiro_config";
 
-// Parámetro “inteligente”: FC objetivo orientativo (no obligatorio)
-const FC_OBJETIVO = 1.2; // kg eq/m³ (puedes ajustar)
+// Profundidad y taco típicos de perforación (en metros)
+const PROF_PERFORACION = 3.8;   // m
+const TACO_PERFORACION = 0.4;   // m
+const LONG_CARGA = Math.max(PROF_PERFORACION - TACO_PERFORACION, 0); // tramo cargado
 
 /* ---------------------------------------------------------------------
    2) ESTADO GLOBAL
@@ -73,16 +75,16 @@ const objetivoTirosPorTipo = {
   // Destroza = resto
 };
 
-// Esquema default (ajustable en la UI)
+// Esquema default (Emultex/E-20 en cartuchos por tiro, ANFO en kg POR METRO)
 const esquemaCargaDefault = {
   Escariado:   { emultex: 0,    e20: 0,    anfo: 0     },
   Zapateras:   { emultex: 17,   e20: 0,    anfo: 0     },
-  Coronas:     { emultex: 1,    e20: 1,    anfo: 6     },
-  Cajas:       { emultex: 1,    e20: 1,    anfo: 5     },
-  Rainura:     { emultex: 0.8,  e20: 0,    anfo: 3.5   },
-  AuxCaja:     { emultex: 1,    e20: 0,    anfo: 4.06  },
-  AuxCorona:   { emultex: 0,    e20: 1,    anfo: 4.06  },
-  Destroza:    { emultex: 0,    e20: 1,    anfo: 4.06  }
+  Coronas:     { emultex: 1,    e20: 1,    anfo: 1.76  }, // 6 kg/tiro ÷ 3.4 m
+  Cajas:       { emultex: 1,    e20: 1,    anfo: 1.47  }, // 5 kg/tiro ÷ 3.4 m
+  Rainura:     { emultex: 0.8,  e20: 0,    anfo: 1.03  }, // 3.5 kg/tiro ÷ 3.4 m
+  AuxCaja:     { emultex: 1,    e20: 0,    anfo: 1.19  }, // 4.06 kg/tiro ÷ 3.4 m
+  AuxCorona:   { emultex: 0,    e20: 1,    anfo: 1.19  }, // idem
+  Destroza:    { emultex: 0,    e20: 1,    anfo: 1.19  }  // idem
 };
 
 function cargarEsquemaTipoTiro() {
@@ -287,12 +289,16 @@ function calcularExplosivosPorTipoTiro(malla) {
   let totalE20Cart = 0;
   let totalANFOKg = 0;
 
-  TIPOS_DE_TIRO.forEach((tipo) => {
+   TIPOS_DE_TIRO.forEach((tipo) => {
     const n = conteo[tipo] || 0;
     const esquema = esquemaTipoTiro[tipo] || { emultex: 0, e20: 0, anfo: 0 };
+
     totalEmultexCart += n * (esquema.emultex || 0);
     totalE20Cart += n * (esquema.e20 || 0);
-    totalANFOKg += n * (esquema.anfo || 0);
+
+    // ANFO definido como kg POR METRO → kg totales = n_tiros × longitud_carga × kg/m
+    const kgAnfoPorMetro = esquema.anfo || 0;
+    totalANFOKg += n * LONG_CARGA * kgAnfoPorMetro;
   });
 
   const kgEmultex = totalEmultexCart * PESO_CARTUCHO.Emultex;
