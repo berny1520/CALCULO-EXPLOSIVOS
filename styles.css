@@ -1,1 +1,305 @@
-/* XTREME MINING STYLES - Dark UI */ ...
+/* ---------------------------------------------------------
+   XTREME MINING - STYLES.CSS
+   Interfaz profesional modo oscuro
+--------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* ---------------- HEADER ---------------- */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: #020617;
+  border-bottom: 1px solid #1e293b;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-main {
+  font-size: 20px;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.1em;
+}
+
+.logo-sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.credits {
+  text-align: right;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ---------------- LAYOUT ---------------- */
+
+.container {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+/* ---------------- CARDS ---------------- */
+
+.card {
+  background: #020617;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #1e293b;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #e2e8f0;
+}
+
+h3 {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  color: #a1a1aa;
+}
+
+/* ---------------- FORM ---------------- */
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: 1px solid #38bdf8;
+  border-color: #38bdf8;
+}
+
+.form-row-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+/* ---------------- BOTONES ---------------- */
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #0ea5e9, #22c55e);
+  color: #0f172a;
+  margin-top: 10px;
+}
+
+.btn-secondary {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  margin-top: 6px;
+}
+
+.btn-secondary:hover {
+  background: #1e293b;
+}
+
+/* ---------------- RESULTADOS ---------------- */
+
+.resultado {
+  margin-top: 12px;
+  padding: 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: #111827;
+  border: 1px dashed #334155;
+}
+
+/* ---------------- MALLA CANVAS ---------------- */
+
+.malla-wrapper {
+  margin-top: 16px;
+  padding: 10px;
+  background: #111827;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+}
+
+.malla-wrapper canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+/* ---------------- TABLA TIPOS DE TIRO ---------------- */
+
+.tabla-tiro {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.tabla-tiro th {
+  background: #1e293b;
+  padding: 6px;
+  border-bottom: 1px solid #334155;
+  color: #94a3b8;
+  text-align: left;
+  font-weight: 600;
+}
+
+.tabla-tiro td {
+  padding: 6px;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+.tabla-tiro input {
+  width: 80px;
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* ---------------- REGISTRO + FILTROS ---------------- */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+  align-items: flex-end;
+}
+
+/* ---------------- TABLA REGISTROS ---------------- */
+
+.table-wrapper {
+  max-height: 250px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead {
+  background: #0f172a;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+th,
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1e293b;
+}
+
+th {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+tbody tr:nth-child(even) {
+  background: #0f172a;
+}
+
+tbody tr:hover {
+  background: #1e293b;
+}
+
+.row-selected {
+  background: #1e293b !important;
+  border-left: 3px solid #38bdf8;
+}
+
+/* ---------------- GRAFICOS ---------------- */
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.chart-card {
+  background: #111827;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #1e293b;
+}
+
+.chart-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+/* ---------------- FOOTER ---------------- */
+
+.footer {
+  margin-top: 16px;
+  padding: 10px 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+  border-top: 1px solid #1e293b;
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
