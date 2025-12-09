@@ -2,236 +2,334 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Xtreme Mining – Diseño de Disparo por Tipo de Tiro</title>
+  <title>Xtreme Mining - Cálculo de Explosivos</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js para los gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-
-<header class="header">
-  <div class="logo">
-    <div class="logo-text">
-      <span class="logo-main">XTREME MINING</span>
-      <span class="logo-sub">Sistema Profesional de Diseño de Disparos</span>
+  <header class="header">
+    <div class="logo">
+      <!-- Si tienes el archivo, descomenta y pon el nombre correcto -->
+      <!-- <img src="logo_xtreme.png" alt="Xtreme Mining" /> -->
+      <div class="logo-text">
+        <span class="logo-main">XTREME MINING</span>
+        <span class="logo-sub">Explosivos &amp; Diseño de Disparo</span>
+      </div>
     </div>
-  </div>
-  <div class="credits">
-    <strong>Creador:</strong> Bernardo Ojeda<br>
-    Jefe de Innovación y Formación
-  </div>
-</header>
+    <div class="credits">
+      <strong>Creador:</strong> Bernardo Ojeda<br />
+      Jefe de Innovación y Formación
+    </div>
+  </header>
 
-<main class="container">
+  <main class="container">
+    <!-- PANEL IZQUIERDO: FORMULARIO -->
+    <section class="card">
+      <h2>Ingreso de parámetros del disparo</h2>
 
-  <!-- ========================================= -->
-  <!-- PANEL IZQUIERDO – FORMULARIO PRINCIPAL   -->
-  <!-- ========================================= -->
-  <section class="card">
-    <h2>Parámetros del Disparo</h2>
-
-    <form id="form-disparo">
-
-      <!-- MINA Y CONTRATO -->
-      <div class="form-row">
-        <label for="contrato">Contrato</label>
-        <input id="contrato" type="text" placeholder="Ej: 5010" required />
-      </div>
-
-      <div class="form-row">
-        <label for="mina">Mina</label>
-        <select id="mina">
-          <option value="">Seleccionar...</option>
-          <option value="Xtreme Andina">Xtreme Andina</option>
-          <option value="Xtreme Teniente">Xtreme Teniente</option>
-          <option value="Xtreme Chuquicamata">Xtreme Chuquicamata</option>
-          <option value="Xtreme Carpetas">Xtreme Carpetas</option>
-        </select>
-      </div>
-
-      <!-- GEOMETRÍA -->
-      <h3>Geometría de la Excavación</h3>
-
-      <div class="form-row-group">
+      <form id="form-disparo">
         <div class="form-row">
-          <label for="ancho">Ancho (m)</label>
-          <input id="ancho" type="number" step="0.01" value="5.20" />
-        </div>
-        <div class="form-row">
-          <label for="alto">Alto (m)</label>
-          <input id="alto" type="number" step="0.01" value="6.10" />
-        </div>
-        <div class="form-row">
-          <label for="largo">Avance (m)</label>
-          <input id="largo" type="number" step="0.01" value="3.80" />
-        </div>
-      </div>
-
-      <!-- BURDEN / ESPACIAMIENTO -->
-      <h3>Burden y Espaciamiento</h3>
-
-      <div class="form-row-group">
-        <div class="form-row">
-          <label for="diametro">Diámetro (mm)</label>
-          <input id="diametro" type="number" step="1" value="51" />
+          <label for="contrato">Contrato</label>
+          <input
+            id="contrato"
+            name="contrato"
+            type="text"
+            placeholder="Ej: Contrato 5010"
+            required
+          />
         </div>
 
         <div class="form-row">
-          <label for="modelo-burden">Modelo</label>
-          <select id="modelo-burden">
-            <option value="simple">Recomendado (B=0,60 / S=0,80)</option>
-            <option value="roca">Por tipo de roca</option>
-            <option value="manual">Manual</option>
+          <label for="mina">Mina</label>
+          <select id="mina" name="mina" required>
+            <option value="">Seleccionar...</option>
+            <option value="Xtreme Andina">Xtreme Andina</option>
+            <option value="Xtreme Teniente">Xtreme Teniente</option>
+            <option value="Xtreme Chuquicamata">Xtreme Chuquicamata</option>
+            <option value="Xtreme Carpetas">Xtreme Carpetas</option>
+            <option value="Otra">Otra / Especifique en observaciones</option>
           </select>
         </div>
 
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="ancho">Ancho excavación (m)</label>
+            <input
+              id="ancho"
+              type="number"
+              step="0.01"
+              min="0"
+              value="5.20"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="alto">Alto excavación (m)</label>
+            <input
+              id="alto"
+              type="number"
+              step="0.01"
+              min="0"
+              value="6.10"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="largo">Avance / Largo perforación (m)</label>
+            <input
+              id="largo"
+              type="number"
+              step="0.01"
+              min="0"
+              value="3.80"
+              required
+            />
+          </div>
+        </div>
+
+        <h3>Modelo de Burden y Espaciamiento</h3>
+
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="diametro">Diámetro perforación (mm)</label>
+            <input
+              id="diametro"
+              type="number"
+              step="1"
+              min="25"
+              value="51"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="modelo-burden">Modelo</label>
+            <select id="modelo-burden">
+              <option value="simple">Recomendado (B=0,60 / S=0,80)</option>
+              <option value="roca">Por tipo de roca</option>
+              <option value="manual">Manual (usar B y S ingresados)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="tipo-roca">Tipo de roca</label>
+            <select id="tipo-roca">
+              <option value="dura">Dura (típica)</option>
+              <option value="muy-dura">Muy dura</option>
+              <option value="media">Media</option>
+              <option value="blanda">Blanda</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="burden">Burden B (m)</label>
+            <input
+              id="burden"
+              type="number"
+              step="0.01"
+              min="0"
+              value="0"
+            />
+          </div>
+          <div class="form-row">
+            <label for="espaciamiento">Espaciamiento S (m)</label>
+            <input
+              id="espaciamiento"
+              type="number"
+              step="0.01"
+              min="0"
+              value="0"
+            />
+          </div>
+          <div class="form-row">
+            <label for="nperf">
+              N° perforaciones<br />
+              <span style="font-size:11px; color:#6b7280;">
+                (se calcula automático con B y S)
+              </span>
+            </label>
+            <input id="nperf" type="number" min="0" value="0" />
+          </div>
+        </div>
+
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="densidad">Factor de carga objetivo (kg eq/m³)</label>
+            <input
+              id="densidad"
+              type="number"
+              step="0.01"
+              min="0"
+              value="2.37"
+              required
+            />
+          </div>
+        </div>
+
+        <h3>Participación relativa de explosivos (MODO XTREME)</h3>
+        <p
+          style="
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: -4px;
+            margin-bottom: 6px;
+          "
+        >
+          Ingresar participación relativa; pueden ser porcentajes o índices (no
+          necesitan sumar 1 ni 100).<br />
+          El sistema los normaliza automáticamente antes de calcular el
+          equivalente.
+        </p>
+        <div class="form-row-group">
+          <div class="form-row">
+            <label for="prop-emultex">Emultex (participación)</label>
+            <input
+              id="prop-emultex"
+              type="number"
+              step="0.01"
+              min="0"
+              value="30"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="prop-famecorte">Famecorte E-20 (participación)</label>
+            <input
+              id="prop-famecorte"
+              type="number"
+              step="0.01"
+              min="0"
+              value="10"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="prop-anfo">ANFO Premium (participación)</label>
+            <input
+              id="prop-anfo"
+              type="number"
+              step="0.01"
+              min="0"
+              value="60"
+              required
+            />
+          </div>
+        </div>
+
         <div class="form-row">
-          <label for="tipo-roca">Tipo de roca</label>
-          <select id="tipo-roca">
-            <option value="dura">Dura</option>
-            <option value="muy-dura">Muy dura</option>
-            <option value="media">Media</option>
-            <option value="blanda">Blanda</option>
+          <label for="obs">Observaciones</label>
+          <textarea
+            id="obs"
+            rows="2"
+            placeholder="Observaciones del frente, tipo de roca, sección D2, etc."
+          ></textarea>
+        </div>
+
+        <div class="form-row-group">
+          <button type="submit" class="btn-primary">
+            Calcular y Registrar
+          </button>
+          <button
+            type="button"
+            id="btn-cancelar-edicion"
+            class="btn-secondary"
+            style="display: none"
+          >
+            Cancelar edición
+          </button>
+        </div>
+      </form>
+
+      <div id="resultado" class="resultado"></div>
+
+      <div class="malla-wrapper">
+        <h3>Malla de perforación (vista sección)</h3>
+        <canvas id="canvasMalla" width="420" height="260"></canvas>
+      </div>
+    </section>
+
+    <!-- PANEL DERECHO: REGISTRO, TABLA, GRÁFICOS -->
+    <section class="card">
+      <h2>Registro histórico de disparos</h2>
+
+      <div class="filters">
+        <div class="form-row">
+          <label for="filtro-mina">Filtrar por mina</label>
+          <select id="filtro-mina">
+            <option value="">Todas</option>
+            <option value="Xtreme Andina">Xtreme Andina</option>
+            <option value="Xtreme Teniente">Xtreme Teniente</option>
+            <option value="Xtreme Chuquicamata">Xtreme Chuquicamata</option>
+            <option value="Xtreme Carpetas">Xtreme Carpetas</option>
           </select>
         </div>
-      </div>
-
-      <div class="form-row-group">
         <div class="form-row">
-          <label for="burden">Burden (m)</label>
-          <input id="burden" type="number" step="0.01" value="0" />
+          <label for="filtro-contrato">Filtrar por contrato</label>
+          <input id="filtro-contrato" type="text" placeholder="Ej: 5010" />
         </div>
+        <button
+          id="btn-limpiar-filtros"
+          class="btn-secondary"
+          type="button"
+        >
+          Limpiar filtros
+        </button>
+        <button
+          id="btn-export-excel"
+          class="btn-secondary"
+          type="button"
+        >
+          Exportar Excel
+        </button>
+        <button id="btn-export-pdf" class="btn-secondary" type="button">
+          Exportar PDF
+        </button>
+        <button id="btn-eliminar" class="btn-secondary" type="button">
+          Eliminar seleccionado
+        </button>
+      </div>
 
-        <div class="form-row">
-          <label for="espaciamiento">Espaciamiento (m)</label>
-          <input id="espaciamiento" type="number" step="0.01" value="0" />
+      <div class="table-wrapper">
+        <table id="tabla-registros">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Contrato</th>
+              <th>Mina</th>
+              <th>Sección (m)</th>
+              <th>Avance (m)</th>
+              <th>B (m)</th>
+              <th>S (m)</th>
+              <th>N° Perf.</th>
+              <th>Volumen (m³)</th>
+              <th>Fc (kg/m³)</th>
+              <th>Emultex (kg)</th>
+              <th>Famecorte (kg)</th>
+              <th>ANFO (kg)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="charts">
+        <div class="chart-card">
+          <h3>Carga por tipo de explosivo (kg reales)</h3>
+          <canvas id="chartExplosivos"></canvas>
         </div>
-
-        <div class="form-row">
-          <label for="nperf">N° Perforaciones</label>
-          <input id="nperf" type="number" readonly />
+        <div class="chart-card">
+          <h3>Factor de carga por disparo</h3>
+          <canvas id="chartFc"></canvas>
         </div>
       </div>
+    </section>
+  </main>
 
-      <!-- OBSERVACIONES -->
-      <div class="form-row">
-        <label for="obs">Observaciones</label>
-        <textarea id="obs" rows="2"></textarea>
-      </div>
+  <footer class="footer">
+    © <span id="year"></span> Xtreme Mining · Sistema de Cálculo de Explosivos.
+  </footer>
 
-      <button type="submit" class="btn-primary">
-        Calcular y Registrar
-      </button>
-      <button id="btn-cancelar-edicion" type="button" class="btn-secondary" style="display:none;">
-        Cancelar edición
-      </button>
-
-    </form>
-
-    <!-- RESULTADO -->
-    <div id="resultado" class="resultado"></div>
-
-    <!-- CANVAS MALLA -->
-    <div class="malla-wrapper">
-      <h3>Malla de Perforación (Vista Herradura)</h3>
-      <canvas id="canvasMalla" width="420" height="260"></canvas>
-    </div>
-  </section>
-
-
-  <!-- ========================================= -->
-  <!-- PANEL DERECHO – TIPOS DE TIRO + REGISTRO -->
-  <!-- ========================================= -->
-  <section class="card">
-    <h2>Explosivo por TIPO DE TIRO (Editable)</h2>
-
-    <p style="font-size:12px;color:#9ca3af;">
-      Ajusta aquí la carga unitaria por tiro en cada grupo.
-      El sistema multiplicará × el número de tiros reales de cada tipo.
-    </p>
-
-    <!-- TABLA EDITABLE DE CARGA POR TIPO DE TIRO -->
-    <table class="tabla-tiro">
-      <thead>
-        <tr>
-          <th>Tipo de tiro</th>
-          <th>N° tiros</th>
-          <th>Emultex<br>(cart/tiro)</th>
-          <th>Famecorte E-20<br>(cart/tiro)</th>
-          <th>ANFO<br>(kg/tiro)</th>
-        </tr>
-      </thead>
-      <tbody id="tablaTipoTiro">
-        <!-- Rellenado desde JS -->
-      </tbody>
-    </table>
-
-    <!-- REGISTRO HISTÓRICO -->
-    <h2 style="margin-top:20px;">Registro Histórico</h2>
-
-    <div class="filters">
-      <div class="form-row">
-        <label for="filtro-mina">Filtrar por mina</label>
-        <select id="filtro-mina">
-          <option value="">Todas</option>
-          <option value="Xtreme Andina">Xtreme Andina</option>
-          <option value="Xtreme Teniente">Xtreme Teniente</option>
-          <option value="Xtreme Chuquicamata">Xtreme Chuquicamata</option>
-          <option value="Xtreme Carpetas">Xtreme Carpetas</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <label for="filtro-contrato">Filtrar por contrato</label>
-        <input id="filtro-contrato" type="text" />
-      </div>
-
-      <button id="btn-limpiar-filtros" class="btn-secondary">Limpiar</button>
-      <button id="btn-export-excel" class="btn-secondary">Exportar Excel</button>
-      <button id="btn-export-pdf" class="btn-secondary">PDF</button>
-      <button id="btn-eliminar" class="btn-secondary">Eliminar</button>
-    </div>
-
-    <div class="table-wrapper">
-      <table id="tabla-registros">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Contrato</th>
-            <th>Mina</th>
-            <th>Sección</th>
-            <th>Avance</th>
-            <th>N° Tiros</th>
-            <th>Volumen</th>
-            <th>Fc</th>
-            <th>Emultex (kg)</th>
-            <th>E-20 (kg)</th>
-            <th>ANFO (kg)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <!-- GRAFICOS -->
-    <div class="charts">
-      <div class="chart-card">
-        <h3>Carga por tipo de explosivo</h3>
-        <canvas id="chartExplosivos"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Factor de carga por disparo</h3>
-        <canvas id="chartFc"></canvas>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<footer class="footer">
-  © <span id="year"></span> Xtreme Mining · Sistema de Diseño de Disparos.
-</footer>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

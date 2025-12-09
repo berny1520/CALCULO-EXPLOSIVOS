@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------
    XTREME MINING - STYLES.CSS
-   Interfaz profesional modo oscuro
+   Interfaz oscura estilo profesional
 --------------------------------------------------------- */
 
 * {
@@ -10,8 +10,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #111827;
+  color: #e5e7eb;
 }
 
 /* ---------------- HEADER ---------------- */
@@ -20,9 +20,19 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 24px;
+  padding: 12px 24px;
   background: #020617;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid #1f2937;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo img {
+  height: 40px;
 }
 
 .logo-text {
@@ -31,24 +41,25 @@ body {
 }
 
 .logo-main {
-  font-size: 20px;
   font-weight: 700;
-  color: #38bdf8;
   letter-spacing: 0.1em;
+  font-size: 18px;
+  color: #38bdf8;
+  text-transform: uppercase;
 }
 
 .logo-sub {
   font-size: 12px;
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
 .credits {
-  text-align: right;
   font-size: 12px;
-  color: #94a3b8;
+  text-align: right;
+  color: #9ca3af;
 }
 
-/* ---------------- LAYOUT ---------------- */
+/* ---------------- CONTAINER ---------------- */
 
 .container {
   display: grid;
@@ -62,21 +73,21 @@ body {
 .card {
   background: #020617;
   border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #1e293b;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  padding: 16px 18px 20px;
+  border: 1px solid #1f2937;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
 }
 
 .card h2 {
-  margin: 0 0 12px;
+  margin-top: 0;
   font-size: 18px;
-  color: #e2e8f0;
+  margin-bottom: 12px;
 }
 
 h3 {
-  margin: 16px 0 8px;
+  margin-top: 16px;
   font-size: 14px;
-  color: #a1a1aa;
+  color: #9ca3af;
 }
 
 /* ---------------- FORM ---------------- */
@@ -89,19 +100,19 @@ h3 {
 
 .form-row label {
   font-size: 12px;
-  color: #94a3b8;
   margin-bottom: 4px;
+  color: #9ca3af;
 }
 
 .form-row input,
 .form-row select,
 .form-row textarea {
   border-radius: 8px;
-  padding: 8px;
+  border: 1px solid #374151;
+  padding: 8px 10px;
+  background: #020617;
+  color: #e5e7eb;
   font-size: 13px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #e2e8f0;
 }
 
 .form-row input:focus,
@@ -117,114 +128,82 @@ h3 {
   gap: 10px;
 }
 
-/* ---------------- BOTONES ---------------- */
+/* ---------------- BUTTONS ---------------- */
 
 .btn-primary,
 .btn-secondary {
   border-radius: 999px;
   padding: 8px 16px;
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
   border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .btn-primary {
   background: linear-gradient(90deg, #0ea5e9, #22c55e);
-  color: #0f172a;
-  margin-top: 10px;
+  color: #020617;
+  margin-top: 8px;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
 }
 
 .btn-secondary {
-  background: #0f172a;
-  border: 1px solid #334155;
-  color: #e2e8f0;
-  margin-top: 6px;
+  background: #111827;
+  border: 1px solid #374151;
+  color: #e5e7eb;
 }
 
 .btn-secondary:hover {
-  background: #1e293b;
+  background: #020617;
 }
 
 /* ---------------- RESULTADOS ---------------- */
 
 .resultado {
   margin-top: 12px;
-  padding: 10px;
   font-size: 13px;
   border-radius: 8px;
+  padding: 10px;
   background: #111827;
-  border: 1px dashed #334155;
+  border: 1px dashed #374151;
 }
 
 /* ---------------- MALLA CANVAS ---------------- */
 
 .malla-wrapper {
-  margin-top: 16px;
+  margin-top: 12px;
   padding: 10px;
-  background: #111827;
   border-radius: 8px;
-  border: 1px solid #1e293b;
+  border: 1px solid #1f2937;
+  background: #111827;
 }
 
 .malla-wrapper canvas {
   width: 100%;
   height: auto;
+  display: block;
   border-radius: 6px;
-  border: 1px solid #1e293b;
+  border: 1px solid #1f2937;
 }
 
-/* ---------------- TABLA TIPOS DE TIRO ---------------- */
-
-.tabla-tiro {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 14px;
-  font-size: 13px;
-}
-
-.tabla-tiro th {
-  background: #1e293b;
-  padding: 6px;
-  border-bottom: 1px solid #334155;
-  color: #94a3b8;
-  text-align: left;
-  font-weight: 600;
-}
-
-.tabla-tiro td {
-  padding: 6px;
-  border-bottom: 1px solid #1e293b;
-  color: #e2e8f0;
-}
-
-.tabla-tiro input {
-  width: 80px;
-  padding: 4px 6px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #e2e8f0;
-}
-
-/* ---------------- REGISTRO + FILTROS ---------------- */
+/* ---------------- TABLE ---------------- */
 
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 10px;
   align-items: flex-end;
+  margin-bottom: 10px;
 }
 
-/* ---------------- TABLA REGISTROS ---------------- */
-
 .table-wrapper {
-  max-height: 250px;
-  overflow-y: auto;
+  max-height: 260px;
+  overflow: auto;
   border-radius: 8px;
-  border: 1px solid #1e293b;
+  border: 1px solid #1f2937;
   margin-bottom: 16px;
 }
 
@@ -235,37 +214,39 @@ table {
 }
 
 thead {
-  background: #0f172a;
   position: sticky;
   top: 0;
+  background: #020617;
   z-index: 1;
 }
 
 th,
 td {
   padding: 6px 8px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid #1f2937;
+  text-align: left;
 }
 
 th {
-  color: #94a3b8;
   font-weight: 600;
+  color: #9ca3af;
 }
 
 tbody tr:nth-child(even) {
-  background: #0f172a;
+  background: #020617;
 }
 
 tbody tr:hover {
-  background: #1e293b;
+  background: #1f2937;
 }
 
+/* Fila seleccionada */
 .row-selected {
-  background: #1e293b !important;
-  border-left: 3px solid #38bdf8;
+  background: #0f172a !important;
+  box-shadow: inset 0 0 0 1px #38bdf8;
 }
 
-/* ---------------- GRAFICOS ---------------- */
+/* ---------------- CHARTS ---------------- */
 
 .charts {
   display: grid;
@@ -274,26 +255,26 @@ tbody tr:hover {
 }
 
 .chart-card {
-  background: #111827;
-  padding: 10px;
+  background: #020617;
   border-radius: 10px;
-  border: 1px solid #1e293b;
+  padding: 10px;
+  border: 1px solid #1f2937;
 }
 
 .chart-card h3 {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin-top: 0;
+  margin-bottom: 6px;
 }
 
 /* ---------------- FOOTER ---------------- */
 
 .footer {
-  margin-top: 16px;
-  padding: 10px 0;
+  margin-top: 8px;
+  padding: 10px 16px;
+  font-size: 11px;
   text-align: center;
-  color: #64748b;
-  font-size: 12px;
-  border-top: 1px solid #1e293b;
+  color: #6b7280;
+  border-top: 1px solid #1f2937;
 }
 
 /* ---------------- RESPONSIVE ---------------- */
